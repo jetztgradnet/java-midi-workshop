@@ -1,14 +1,13 @@
 package net.jetztgrad.midi.workshop;
 
-import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
-import javax.sound.midi.Synthesizer;
 
 /**
- * PlayNote — send a single NOTE_ON / NOTE_OFF via the built-in software synthesizer.
+ * PlayNote — send a single NOTE_ON / NOTE_OFF via a MIDI output device.
  *
  * Run with:  ./gradlew playNote
+ *            ./gradlew playNote -Pdevice=XIAO
  *
  * This shows the raw MIDI message model:
  *   • NOTE_ON  : status byte 0x90 | channel, data1 = note number, data2 = velocity
@@ -19,16 +18,8 @@ import javax.sound.midi.Synthesizer;
 public class PlayNote {
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Opening software synthesizer...");
-
-        // Obtain and open the platform's default software synthesizer.
-        // On macOS this is Apple's built-in DLS MusicDevice.
-        // On Windows it is the default Microsoft GS Wavetable Synth.
-        Synthesizer synth = MidiSystem.getSynthesizer();
-        synth.open();
-
-        // A Receiver accepts MidiMessage objects.
-        Receiver receiver = synth.getReceiver();
+        // Open the requested output device (or the default synth if -Pdevice is absent).
+        Receiver receiver = DeviceUtil.openReceiver(args);
 
         // --- Build NOTE_ON message ---
         // channel 0 (MIDI channel 1), note 60 (middle C), velocity 80
@@ -50,7 +41,6 @@ public class PlayNote {
         Thread.sleep(300);           // give the synth time to release
 
         receiver.close();
-        synth.close();
         System.out.println("Done.");
     }
 }

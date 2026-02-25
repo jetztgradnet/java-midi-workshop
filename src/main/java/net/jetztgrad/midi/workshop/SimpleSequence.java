@@ -13,6 +13,7 @@ import javax.sound.midi.Track;
  * SimpleSequence — build and play a short melody programmatically.
  *
  * Run with:  ./gradlew simpleSequence
+ *            ./gradlew simpleSequence -Pdevice=XIAO
  *
  * Concepts introduced:
  *   Sequence  — a container for one or more tracks and timing information
@@ -52,9 +53,11 @@ public class SimpleSequence {
         endOfTrack.setMessage(0x2F, new byte[0], 0);   // type 0x2F = End of Track
         track.add(new MidiEvent(endOfTrack, 16));        // after the last note
 
-        // ── 5. Open a Sequencer ───────────────────────────────────────────
-        Sequencer sequencer = MidiSystem.getSequencer();
+        // ── 5. Open a Sequencer and connect it to the output device ──────
+        // getSequencer(false) = don't auto-connect; we set the receiver explicitly.
+        Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
+        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
 
         // ── 6. Load the sequence and set the tempo ────────────────────────
         sequencer.setSequence(sequence);

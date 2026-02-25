@@ -17,6 +17,11 @@ def pkg = 'net.jetztgrad.midi.workshop'
 
 // ── Workshop tasks ──────────────────────────────────────────────────────────
 // Run each example with its own task, e.g.:  ./gradlew listDevices
+//
+// Optional: select a specific MIDI output device by partial name
+//   ./gradlew playNote       -Pdevice=XIAO
+//   ./gradlew simpleSequence -Pdevice="IAC Bus"
+// Without -Pdevice the platform's default software synthesizer is used.
 
 tasks.register('listDevices', JavaExec) {
     group = 'workshop'
@@ -28,52 +33,55 @@ tasks.register('listDevices', JavaExec) {
 
 tasks.register('playNote', JavaExec) {
     group = 'workshop'
-    description = 'Play a single MIDI note via the software synthesizer'
+    description = 'Play a single MIDI note (-Pdevice=<name> to target a specific device)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.PlayNote"
     dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
 tasks.register('simpleSequence', JavaExec) {
     group = 'workshop'
-    description = 'Play a programmatic C-E-G-C sequence'
+    description = 'Play a programmatic C-E-G-C sequence (-Pdevice=<name> optional)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.SimpleSequence"
     dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
 tasks.register('midiFilePlayer', JavaExec) {
     group = 'workshop'
-    description = 'Play a MIDI file (default: first file in midi/)'
+    description = 'Play a MIDI file (-PmidiFile=<path>, -Pdevice=<name> both optional)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.MidiFilePlayer"
     dependsOn compileJava
-    // Override file via: ./gradlew midiFilePlayer --args="midi/myfile.mid"
-    if (project.hasProperty('midiFile')) {
-        args(project.property('midiFile'))
-    }
+    if (project.hasProperty('midiFile')) { args project.property('midiFile') }
+    if (project.hasProperty('device'))   { args '--device=' + project.property('device') }
 }
 
 tasks.register('drumPattern', JavaExec) {
     group = 'workshop'
-    description = 'Play a basic 4/4 drum pattern on channel 10'
+    description = 'Play a basic 4/4 drum pattern on channel 10 (-Pdevice=<name> optional)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.DrumPattern"
     dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
 tasks.register('programChange', JavaExec) {
     group = 'workshop'
-    description = 'Play the same phrase with 4 different GM instrument patches'
+    description = 'Play 4 GM patches on the same phrase (-Pdevice=<name> optional)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.ProgramChange"
     dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
 tasks.register('myMelody', JavaExec) {
     group = 'workshop'
-    description = 'Run the hands-on exercise: your own melody'
+    description = 'Run the hands-on exercise: your own melody (-Pdevice=<name> optional)'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "${pkg}.exercise.MyMelody"
     dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }

@@ -13,6 +13,7 @@ import javax.sound.midi.Track;
  * DrumPattern — play a basic 4/4 rock beat using GM channel 10 percussion.
  *
  * Run with:  ./gradlew drumPattern
+ *            ./gradlew drumPattern -Pdevice=XIAO
  *
  * Key facts:
  *   • MIDI channel 10 (index 9 in code) is reserved for percussion in General MIDI.
@@ -79,8 +80,9 @@ public class DrumPattern {
         track.add(new MidiEvent(eot, TOTAL_TICKS));
 
         // Set up and play
-        Sequencer sequencer = MidiSystem.getSequencer();
+        Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
+        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
         sequencer.setSequence(sequence);
         sequencer.setTempoInBPM(120);
 

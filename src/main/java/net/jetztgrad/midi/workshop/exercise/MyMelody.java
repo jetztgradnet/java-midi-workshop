@@ -1,5 +1,6 @@
 package net.jetztgrad.midi.workshop.exercise;
 
+import net.jetztgrad.midi.workshop.DeviceUtil;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
@@ -13,6 +14,7 @@ import javax.sound.midi.Track;
  * MyMelody — hands-on exercise.
  *
  * Run with:  ./gradlew myMelody
+ *            ./gradlew myMelody -Pdevice=XIAO
  *
  * ─────────────────────────────────────────────────────────────────────────
  * YOUR TASK: Fill in the three TODOs below to compose your own melody.
@@ -81,8 +83,9 @@ public class MyMelody {
         track.add(new MidiEvent(eot, 32));
 
         // ── Playback (no need to change this) ────────────────────────────
-        Sequencer sequencer = MidiSystem.getSequencer();
+        Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
+        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
         sequencer.setSequence(sequence);
         sequencer.setTempoInBPM(bpm);
 

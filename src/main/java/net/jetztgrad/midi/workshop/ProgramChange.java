@@ -1,14 +1,13 @@
 package net.jetztgrad.midi.workshop;
 
-import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
-import javax.sound.midi.Synthesizer;
 
 /**
  * ProgramChange — play the same short phrase with different GM instrument patches.
  *
  * Run with:  ./gradlew programChange
+ *            ./gradlew programChange -Pdevice=XIAO
  *
  * General MIDI defines 128 instrument patches (0–127).
  * A PROGRAM_CHANGE message selects the current patch on a channel.
@@ -41,11 +40,7 @@ public class ProgramChange {
     static final int   VELOCITY = 80;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Opening software synthesizer...");
-
-        Synthesizer synth = MidiSystem.getSynthesizer();
-        synth.open();
-        Receiver receiver = synth.getReceiver();
+        Receiver receiver = DeviceUtil.openReceiver(args);
 
         for (int i = 0; i < PATCH_NUMBERS.length; i++) {
             int    patch = PATCH_NUMBERS[i];
@@ -78,7 +73,6 @@ public class ProgramChange {
         }
 
         receiver.close();
-        synth.close();
         System.out.println("\nDone.");
     }
 }

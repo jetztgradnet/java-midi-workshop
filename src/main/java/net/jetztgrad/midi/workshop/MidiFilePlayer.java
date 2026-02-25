@@ -14,7 +14,9 @@ import java.nio.file.Paths;
  * MidiFilePlayer — load and play a standard MIDI file (.mid).
  *
  * Run with:  ./gradlew midiFilePlayer
- *            ./gradlew midiFilePlayer -PmidiFile=midi/bach_minuet.mid
+ *            ./gradlew midiFilePlayer -PmidiFile=midi/bach_minuet_g.mid
+ *            ./gradlew midiFilePlayer -Pdevice=XIAO
+ *            ./gradlew midiFilePlayer -PmidiFile=midi/bach_minuet_g.mid -Pdevice=XIAO
  *
  * If no file is specified the player picks the first .mid file in the midi/ directory.
  */
@@ -38,9 +40,10 @@ public class MidiFilePlayer {
         double seconds  = sequence.getMicrosecondLength() / 1_000_000.0;
         System.out.printf("Tracks: %d  |  Duration: %.1f seconds%n", trackCount, seconds);
 
-        // Open the system sequencer and load the sequence
-        Sequencer sequencer = MidiSystem.getSequencer();
+        // Open the sequencer and connect it to the output device
+        Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
+        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
         sequencer.setSequence(sequence);
 
         System.out.println("Playing... (press Ctrl+C to stop early)");
@@ -61,9 +64,11 @@ public class MidiFilePlayer {
 
     /** Resolves which MIDI file to play. */
     private static File resolveMidiFile(String[] args) {
-        // 1. Command-line argument takes priority
-        if (args.length > 0) {
-            return new File(args[0]);
+        // 1. First argument that is not a flag (--device=...) is the file path
+        for (String arg : args) {
+            if (!arg.startsWith("--")) {
+                return new File(arg);
+            }
         }
 
         // 2. First .mid / .midi file found in the midi/ directory
