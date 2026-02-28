@@ -16,6 +16,7 @@ Presented at Java conferences and available for self-study.
 - How to program Channel 10 drum patterns
 - How to switch instrument patches with Program Change
 - How to connect and use a USB MIDI synthesizer (Seeed XIAO)
+- How to play notes live using the computer keyboard (terminal and Swing)
 
 ---
 
@@ -64,6 +65,8 @@ cd java-midi-workshop
 | `./gradlew drumPattern` | Play a 4/4 kick + snare + hi-hat pattern |
 | `./gradlew programChange` | Hear the same phrase in 4 different instrument patches |
 | `./gradlew myMelody` | Run the hands-on exercise (edit `exercise/MyMelody.java` first!) |
+| `./gradlew liveTerminalKeyboard` | Play notes live by typing in the terminal |
+| `./gradlew liveWindowKeyboard` | Play notes live in a Swing window (true polyphony) |
 
 ---
 
@@ -78,6 +81,8 @@ java-midi-workshop/
 │   ├── MidiFilePlayer.java    — load and play a .mid file
 │   ├── DrumPattern.java       — channel 10 percussion
 │   ├── ProgramChange.java     — switch GM instrument patches
+│   ├── LiveTerminalKeyboard.java — live keyboard via terminal
+│   ├── LiveWindowKeyboard.java   — live keyboard via Swing window
 │   └── exercise/
 │       └── MyMelody.java      — hands-on template with TODO stubs
 ├── midi/                      — place public-domain .mid files here
@@ -109,6 +114,22 @@ java-midi-workshop/
 | Participant checklist | [handouts/participant-checklist.md](handouts/participant-checklist.md) | [handouts/participant-checklist-de.md](handouts/participant-checklist-de.md) |
 | Tutor packing list | [handouts/tutor-packing-list.md](handouts/tutor-packing-list.md) | [handouts/tutor-packing-list-de.md](handouts/tutor-packing-list-de.md) |
 | Tutor timeline | [handouts/tutor-timeline.md](handouts/tutor-timeline.md) | [handouts/tutor-timeline-de.md](handouts/tutor-timeline-de.md) |
+
+---
+
+## Rebuilding Slides
+
+The pre-built HTML slides are committed to the repository and can be opened directly in any browser.
+To rebuild them after editing the Markdown sources, you need [Node.js](https://nodejs.org/) installed:
+
+```bash
+# Via Gradle (recommended)
+./gradlew buildSlides
+
+# Or call npx directly
+npx --yes @marp-team/marp-cli@latest slides/slides.md    --html -o slides/slides.html
+npx --yes @marp-team/marp-cli@latest slides/slides-de.md --html -o slides/slides-de.html
+```
 
 ---
 

@@ -4,6 +4,7 @@ import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
+import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Synthesizer;
 
 /**
@@ -50,6 +51,82 @@ public class DeviceUtil {
             }
         }
         return null;
+    }
+
+    // ── GM patch data ─────────────────────────────────────────────────────────
+
+    /** Full 128-entry GM patch name list (index = program number). */
+    static final String[] GM_PATCH_NAMES = {
+        // 0–7 Pianos
+        "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano",
+        "Honky-tonk Piano", "Electric Piano 1", "Electric Piano 2", "Harpsichord", "Clavinet",
+        // 8–15 Chromatic Percussion
+        "Celesta", "Glockenspiel", "Music Box", "Vibraphone", "Marimba",
+        "Xylophone", "Tubular Bells", "Dulcimer",
+        // 16–23 Organs
+        "Drawbar Organ", "Percussive Organ", "Rock Organ", "Church Organ", "Reed Organ",
+        "Accordion", "Harmonica", "Tango Accordion",
+        // 24–31 Guitars
+        "Acoustic Guitar (nylon)", "Acoustic Guitar (steel)", "Electric Guitar (jazz)",
+        "Electric Guitar (clean)", "Electric Guitar (muted)", "Overdriven Guitar",
+        "Distortion Guitar", "Guitar Harmonics",
+        // 32–39 Bass
+        "Acoustic Bass", "Electric Bass (finger)", "Electric Bass (pick)", "Fretless Bass",
+        "Slap Bass 1", "Slap Bass 2", "Synth Bass 1", "Synth Bass 2",
+        // 40–47 Strings
+        "Violin", "Viola", "Cello", "Contrabass", "Tremolo Strings",
+        "Pizzicato Strings", "Orchestral Harp", "Timpani",
+        // 48–55 Ensemble
+        "String Ensemble 1", "String Ensemble 2", "Synth Strings 1", "Synth Strings 2",
+        "Choir Aahs", "Voice Oohs", "Synth Choir", "Orchestra Hit",
+        // 56–63 Brass
+        "Trumpet", "Trombone", "Tuba", "Muted Trumpet", "French Horn",
+        "Brass Section", "Synth Brass 1", "Synth Brass 2",
+        // 64–71 Reed
+        "Soprano Sax", "Alto Sax", "Tenor Sax", "Baritone Sax",
+        "Oboe", "English Horn", "Bassoon", "Clarinet",
+        // 72–79 Pipe
+        "Piccolo", "Flute", "Recorder", "Pan Flute",
+        "Blown Bottle", "Shakuhachi", "Whistle", "Ocarina",
+        // 80–87 Synth Lead
+        "Lead 1 (square)", "Lead 2 (sawtooth)", "Lead 3 (calliope)", "Lead 4 (chiff)",
+        "Lead 5 (charang)", "Lead 6 (voice)", "Lead 7 (fifths)", "Lead 8 (bass+lead)",
+        // 88–95 Synth Pad
+        "Pad 1 (new age)", "Pad 2 (warm)", "Pad 3 (polysynth)", "Pad 4 (choir)",
+        "Pad 5 (bowed)", "Pad 6 (metallic)", "Pad 7 (halo)", "Pad 8 (sweep)",
+        // 96–103 Synth Effects
+        "FX 1 (rain)", "FX 2 (soundtrack)", "FX 3 (crystal)", "FX 4 (atmosphere)",
+        "FX 5 (brightness)", "FX 6 (goblins)", "FX 7 (echoes)", "FX 8 (sci-fi)",
+        // 104–111 Ethnic
+        "Sitar", "Banjo", "Shamisen", "Koto", "Kalimba", "Bag Pipe", "Fiddle", "Shanai",
+        // 112–119 Percussive
+        "Tinkle Bell", "Agogo", "Steel Drums", "Woodblock", "Taiko Drum",
+        "Melodic Tom", "Synth Drum", "Reverse Cymbal",
+        // 120–127 Sound Effects
+        "Guitar Fret Noise", "Breath Noise", "Seashore", "Bird Tweet",
+        "Telephone Ring", "Helicopter", "Applause", "Gunshot"
+    };
+
+    /** Curated 10-preset list for digit-key selection (keys 1–9, 0). */
+    static final int[]    PRESET_PROGRAMS = {  0, 19, 24, 40, 48, 56, 65, 73, 80, 88 };
+    static final String[] PRESET_NAMES    = {
+        "Piano", "Organ", "Guitar", "Violin", "Strings",
+        "Trumpet", "Alto Sax", "Flute", "Synth Lead", "Synth Pad"
+    };
+
+    /** Returns combo-box-ready entries: "  0  Acoustic Grand Piano", etc. */
+    static String[] gmPatchList() {
+        String[] result = new String[128];
+        for (int i = 0; i < 128; i++)
+            result[i] = String.format("%3d  %s", i, GM_PATCH_NAMES[i]);
+        return result;
+    }
+
+    /** Sends a PROGRAM_CHANGE; silently ignores send errors. */
+    static void sendProgramChange(Receiver receiver, int channel, int program) {
+        try {
+            receiver.send(new ShortMessage(ShortMessage.PROGRAM_CHANGE, channel, program, 0), -1);
+        } catch (Exception ignored) {}
     }
 
     // ── private helpers ──────────────────────────────────────────────────────

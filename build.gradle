@@ -85,3 +85,44 @@ tasks.register('myMelody', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
+
+tasks.register('liveTerminalKeyboard', JavaExec) {
+    group = 'workshop'
+    description = 'Play notes live using the terminal keyboard (-Pdevice=<name> optional)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.LiveTerminalKeyboard"
+    dependsOn compileJava
+    standardInput = System.in
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+}
+
+tasks.register('liveWindowKeyboard', JavaExec) {
+    group = 'workshop'
+    description = 'Play notes live using a Swing window (-Pdevice=<name> optional)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.LiveWindowKeyboard"
+    dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+}
+
+// ── Slide build ──────────────────────────────────────────────────────────────
+// Requires Node.js / npx.  Run once after editing slides/slides.md or slides-de.md.
+//   ./gradlew buildSlides
+// Or invoke npx directly:
+//   npx --yes @marp-team/marp-cli@latest slides/slides.md    --html -o slides/slides.html
+//   npx --yes @marp-team/marp-cli@latest slides/slides-de.md --html -o slides/slides-de.html
+
+tasks.register('buildSlides') {
+    group = 'workshop'
+    description = 'Rebuild slide HTML from Marp markdown sources (requires npx / Node.js)'
+    doLast {
+        exec {
+            commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
+                    'slides/slides.md', '--html', '-o', 'slides/slides.html'
+        }
+        exec {
+            commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
+                    'slides/slides-de.md', '--html', '-o', 'slides/slides-de.html'
+        }
+    }
+}

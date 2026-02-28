@@ -398,6 +398,48 @@ Als virtuellen MIDI-Port für andere Apps freischalten:
 
 ---
 
+## Live Terminal-Keyboard
+
+Noten spielen durch Tippen — keine extra Hardware nötig!
+
+```bash
+./gradlew liveTerminalKeyboard            # Standard-Synthesizer
+./gradlew liveTerminalKeyboard -Pdevice=XIAO
+```
+
+```
+  Q  W     R  T  Y     I  O    ← Halbtöne / schwarze Tasten
+  A  S  D  F  G  H  J  K  L  ;  ← weiße Tasten
+  C  D  E  F  G  A  H  C  D  E   (aktuelle Oktave)
+
+  +/=  Oktave hoch   |   -  Oktave runter   |   ESC  Beenden
+```
+
+> Jeder Tastendruck sendet `NOTE_ON`; nach fester Dauer sendet
+> ein virtueller Thread `NOTE_OFF` — auch Akkorde funktionieren.
+
+---
+
+## Live-Fenster-Keyboard
+
+Ein Swing-Fenster ermöglicht echte Polyphonie — mehrere Tasten gleichzeitig.
+
+```bash
+./gradlew liveWindowKeyboard              # Standard-Synthesizer
+./gradlew liveWindowKeyboard -Pdevice=XIAO
+```
+
+- **Geräte-Dropdown** — MIDI-Ausgang ohne Neustart wechseln
+- **LEERTASTE** — Haltepedal (Sustain, CC 64)
+- **ESC** — All Notes Off (Panic)
+- Tastendruck speichert Notennummer → korrektes `NOTE_OFF` auch nach Oktavwechsel
+- Fokusverlust löst automatisch Panic aus (keine hängenden Noten)
+
+> Verwendet `KeyboardFocusManager.addKeyEventDispatcher` damit Tasten-Events
+> unabhängig vom fokussierten Swing-Element ankommen.
+
+---
+
 ## Ausblick
 
 | Thema | Wo nachschauen |

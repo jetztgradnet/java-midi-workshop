@@ -398,6 +398,48 @@ To expose it as a virtual MIDI port for other apps:
 
 ---
 
+## Live Terminal Keyboard
+
+Play notes by typing — no extra hardware needed!
+
+```bash
+./gradlew liveTerminalKeyboard            # default synth
+./gradlew liveTerminalKeyboard -Pdevice=XIAO
+```
+
+```
+  Q  W     R  T  Y     I  O    ← sharps / flats
+  A  S  D  F  G  H  J  K  L  ;  ← white keys
+  C  D  E  F  G  A  B  C  D  E   (current octave)
+
+  +/=  octave up   |   -  octave down   |   ESC  quit
+```
+
+> Each key press fires `NOTE_ON`; after a fixed duration a virtual thread
+> sends `NOTE_OFF` — so chords and fast runs both work.
+
+---
+
+## Live Window Keyboard
+
+A Swing window gives true polyphony — hold multiple keys at once.
+
+```bash
+./gradlew liveWindowKeyboard              # default synth
+./gradlew liveWindowKeyboard -Pdevice=XIAO
+```
+
+- **Device drop-down** — switch MIDI output without restarting
+- **SPACE** — hold for sustain pedal (CC 64)
+- **ESC** — All Notes Off (panic)
+- Key-press stores note number → correct `NOTE_OFF` even after octave change
+- Window losing focus triggers auto-panic (no stuck notes)
+
+> Uses `KeyboardFocusManager.addKeyEventDispatcher` so key events arrive
+> regardless of which Swing component has focus.
+
+---
+
 ## Beyond This Workshop
 
 | Topic | Where to look |
