@@ -89,6 +89,16 @@ tasks.register('midiPanic', JavaExec) {
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
+tasks.register('midiMonitor', JavaExec) {
+    group = 'workshop'
+    description = 'Monitor incoming MIDI messages (-Pdevice=<name>, -Pchannel=<1-16|all> optional)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.MidiMonitor"
+    dependsOn compileJava
+    if (project.hasProperty('device'))  { args '--device='  + project.property('device')  }
+    if (project.hasProperty('channel')) { args '--channel=' + project.property('channel') }
+}
+
 tasks.register('myMelody', JavaExec) {
     group = 'workshop'
     description = 'Run the hands-on exercise: your own melody (-Pdevice=<name> optional)'

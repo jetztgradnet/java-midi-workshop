@@ -6,6 +6,8 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Transmitter;
+import java.util.Map;
 
 /**
  * DeviceUtil — locate and open a MIDI output device by name.
@@ -134,6 +136,36 @@ public class DeviceUtil {
         "Telephone Ring", "Helicopter", "Applause", "Gunshot"
     };
 
+    /** Note name array shared across all examples. */
+    public static final String[] NOTE_NAMES =
+        {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
+
+    /** Returns note name + octave, e.g. {@code "C4"} or {@code "D#5"}. */
+    public static String noteName(int note) {
+        return NOTE_NAMES[note % 12] + (note / 12 - 1);
+    }
+
+    /** Common MIDI CC controller names (most frequently encountered). */
+    static final Map<Integer, String> CC_NAMES = Map.ofEntries(
+        Map.entry(0,   "BankSel"),
+        Map.entry(1,   "ModWheel"),
+        Map.entry(7,   "Volume"),
+        Map.entry(10,  "Pan"),
+        Map.entry(11,  "Expression"),
+        Map.entry(64,  "Sustain"),
+        Map.entry(65,  "Portamento"),
+        Map.entry(66,  "Sostenuto"),
+        Map.entry(67,  "SoftPedal"),
+        Map.entry(120, "AllSndOff"),
+        Map.entry(121, "ResetCtrl"),
+        Map.entry(123, "AllNoteOff")
+    );
+
+    /** Returns the common name of a MIDI CC controller, or {@code ""} if unknown. */
+    public static String ccName(int cc) {
+        return CC_NAMES.getOrDefault(cc, "");
+    }
+
     /** Curated 10-preset list for digit-key selection (keys 1–9, 0). */
     static final int[]    PRESET_PROGRAMS = {  0, 19, 24, 40, 48, 56, 65, 73, 80, 88 };
     static final String[] PRESET_NAMES    = {
@@ -166,7 +198,51 @@ public class DeviceUtil {
         }
     }
 
+    /**
+     * Returns a Transmitter for the requested MIDI input device.
+     *
+     * Looks for {@code --device=<name>} in {@code args} and performs a
+     * case-insensitive partial match.  Without {@code --device=}, opens the
+     * first device that has a Transmitter (i.e. can send MIDI data).
+     * Run {@code ./gradlew listDevices} to see all available device names.
+     */
+    public static Transmitter openTransmitter(String[] args) throws MidiUnavailableException {
+        String filter = deviceFilter(args);
+        if (filter != null) {
+            return openNamedTransmitter(filter);
+        }
+        for (MidiDevice.Info info : MidiSystem.getMidiDeviceInfo()) {
+            MidiDevice device = MidiSystem.getMidiDevice(info);
+            if (device.getMaxTransmitters() != 0) {
+                device.open();
+                System.out.println("Input device: " + info.getName());
+                return device.getTransmitter();
+            }
+        }
+        System.err.println("No MIDI input device found.");
+        System.err.println("Run './gradlew listDevices' to see available devices.");
+        System.exit(1);
+        return null; // unreachable
+    }
+
     // ── private helpers ──────────────────────────────────────────────────────
+
+    private static Transmitter openNamedTransmitter(String filter) throws MidiUnavailableException {
+        for (MidiDevice.Info info : MidiSystem.getMidiDeviceInfo()) {
+            if (info.getName().toLowerCase().contains(filter.toLowerCase())) {
+                MidiDevice device = MidiSystem.getMidiDevice(info);
+                if (device.getMaxTransmitters() != 0) {
+                    device.open();
+                    System.out.println("Input device: " + info.getName());
+                    return device.getTransmitter();
+                }
+            }
+        }
+        System.err.println("No input device matching \"" + filter + "\" was found.");
+        System.err.println("Run './gradlew listDevices' to see all available device names.");
+        System.exit(1);
+        return null; // unreachable
+    }
 
     private static Receiver openNamedReceiver(String filter) throws MidiUnavailableException {
         for (MidiDevice.Info info : MidiSystem.getMidiDeviceInfo()) {

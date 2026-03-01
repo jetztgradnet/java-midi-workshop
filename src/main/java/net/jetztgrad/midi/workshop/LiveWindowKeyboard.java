@@ -50,8 +50,6 @@ public class LiveWindowKeyboard {
     static final int BASE_VELOCITY   = 80;
     static final int VELOCITY_JITTER = 15;
 
-    static final String[] NOTE_NAMES = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
-
     // VK keyCode → semitone offset from root C of the current octave
     // Bottom row: white keys  C D E F G A B C(+1) D(+1) E(+1) F(+1)
     // Top row:    black keys  C# D# F# G# A#  C#(+1) D#(+1) F#(+1)
@@ -310,8 +308,8 @@ public class LiveWindowKeyboard {
         try {
             receiver.send(new ShortMessage(ShortMessage.NOTE_ON, CHANNEL, note, velocity), -1);
             pressedNotes.put(keyCode, note);
-            System.out.printf("  NoteOn  %-3s%-2d  (note %3d, vel %3d)%n",
-                    NOTE_NAMES[note % 12], note / 12 - 1, note, velocity);
+            System.out.printf("  NoteOn  %-5s  (note %3d, vel %3d)%n",
+                    DeviceUtil.noteName(note), note, velocity);
         } catch (Exception e) {
             System.err.println("Error sending NoteOn: " + e.getMessage());
         }
@@ -330,8 +328,8 @@ public class LiveWindowKeyboard {
 
         try {
             receiver.send(new ShortMessage(ShortMessage.NOTE_OFF, CHANNEL, note, 0), -1);
-            System.out.printf("  NoteOff %-3s%-2d  (note %3d)%n",
-                    NOTE_NAMES[note % 12], note / 12 - 1, note);
+            System.out.printf("  NoteOff %-5s  (note %3d)%n",
+                    DeviceUtil.noteName(note), note);
         } catch (Exception e) {
             System.err.println("Error sending NoteOff: " + e.getMessage());
         }

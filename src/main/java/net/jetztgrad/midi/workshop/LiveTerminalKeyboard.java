@@ -55,8 +55,6 @@ public class LiveTerminalKeyboard {
     // Needs to be comfortably longer than the key-repeat interval (~30 ms).
     static final int REPEAT_TAIL_MS = 200;
 
-    static final String[] NOTE_NAMES = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
-
     // Character → semitone offset from root C of the current octave
     // Bottom row: white keys C D E F G A B C(+1) D(+1) E(+1) F(+1)
     // Top row: black keys C# D# F# G# A# C#(+1) D#(+1) F#(+1)
@@ -240,8 +238,8 @@ public class LiveTerminalKeyboard {
     static void playNote(char key, int note, int velocity, long initialDeadline) {
         try {
             receiver.send(new ShortMessage(ShortMessage.NOTE_ON, 0, note, velocity), -1);
-            System.out.printf("  %-3s%-2d  (note %3d, vel %3d)\r\n",
-                    NOTE_NAMES[note % 12], note / 12 - 1, note, velocity);
+            System.out.printf("  %-5s  (note %3d, vel %3d)\r\n",
+                    DeviceUtil.noteName(note), note, velocity);
         } catch (Exception e) {
             System.err.println("Error sending note on: " + e.getMessage());
             return;
