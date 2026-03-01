@@ -351,6 +351,26 @@ Hear the same C–E–G phrase as Piano (0), Violin (40), Trumpet (56), Flute (7
 
 ---
 
+## `--patch`: Try Any Instrument Without Editing Code
+
+All playback examples accept `--patch` — by number or by name:
+
+```bash
+./playNote.sh        --patch=40       # Violin  (number)
+./playNote.sh        --patch=violin   # Violin  (partial name, case-insensitive)
+./simpleSequence.sh  --patch=flute    # Flute
+./midiFilePlayer.sh  --patch=trumpet  # Trumpet as initial channel-0 instrument
+./myMelody.sh        --patch=24       # Acoustic Guitar (nylon)
+
+./gradlew playNote -Ppatch=40
+./gradlew simpleSequence -Ppatch=flute
+```
+
+> `drumPattern` uses channel 10 (percussion — different PC semantics).
+> `programChange` *is* the PC demo, so `--patch` is not added there either.
+
+---
+
 ## Hardware: Seeed XIAO Synth
 
 1. Connect via **USB cable** (USB-C)

@@ -351,6 +351,26 @@ Dieselbe C–E–G-Phrase als Piano (0), Violine (40), Trompete (56), Flöte (73
 
 ---
 
+## `--patch`: Instrument wechseln ohne Quellcode-Änderung
+
+Alle Wiedergabe-Beispiele akzeptieren `--patch` — als Nummer oder Name:
+
+```bash
+./playNote.sh        --patch=40       # Violine  (Nummer)
+./playNote.sh        --patch=violin   # Violine  (Teilname, Groß-/Kleinschreibung egal)
+./simpleSequence.sh  --patch=flute    # Flöte
+./midiFilePlayer.sh  --patch=trumpet  # Trompete als Startinstrument auf Kanal 0
+./myMelody.sh        --patch=24       # Acoustic Guitar (Nylon)
+
+./gradlew playNote -Ppatch=40
+./gradlew simpleSequence -Ppatch=flute
+```
+
+> `drumPattern` nutzt Kanal 10 (Percussion — anderer PC-Kontext).
+> `programChange` *ist* die PC-Demo, daher dort kein `--patch`.
+
+---
+
 ## Hardware: Seeed XIAO Synth
 
 1. Per **USB-Kabel** (USB-C) verbinden
