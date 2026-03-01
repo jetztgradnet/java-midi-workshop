@@ -57,7 +57,11 @@ public class SimpleSequence {
         // getSequencer(false) = don't auto-connect; we set the receiver explicitly.
         Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
-        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
+        var receiver = DeviceUtil.openReceiver(args);
+        int patch = DeviceUtil.patchFilter(args);
+        DeviceUtil.sendProgramChange(receiver, 0, patch);
+        System.out.println("Instrument: " + DeviceUtil.GM_PATCH_NAMES[patch] + " (patch " + patch + ")");
+        sequencer.getTransmitter().setReceiver(receiver);
 
         // ── 6. Load the sequence and set the tempo ────────────────────────
         sequencer.setSequence(sequence);

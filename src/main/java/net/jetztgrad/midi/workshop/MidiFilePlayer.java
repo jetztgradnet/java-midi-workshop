@@ -43,7 +43,11 @@ public class MidiFilePlayer {
         // Open the sequencer and connect it to the output device
         Sequencer sequencer = MidiSystem.getSequencer(false);
         sequencer.open();
-        sequencer.getTransmitter().setReceiver(DeviceUtil.openReceiver(args));
+        var receiver = DeviceUtil.openReceiver(args);
+        int patch = DeviceUtil.patchFilter(args);
+        DeviceUtil.sendProgramChange(receiver, 0, patch);
+        System.out.println("Instrument: " + DeviceUtil.GM_PATCH_NAMES[patch] + " (patch " + patch + ")");
+        sequencer.getTransmitter().setReceiver(receiver);
         sequencer.setSequence(sequence);
 
         System.out.println("Playing... (press Ctrl+C to stop early)");

@@ -74,7 +74,7 @@ public class LiveTerminalKeyboard {
     );
 
     static volatile int octave          = DEFAULT_OCTAVE;
-    static volatile int currentProgram  = 0;  // index into DeviceUtil.PRESET_PROGRAMS
+    static volatile int currentProgram  = 0;  // active GM patch number (0–127)
     static Receiver receiver;
 
     // Per-character note tracking for key-hold simulation.
@@ -89,6 +89,12 @@ public class LiveTerminalKeyboard {
         System.setOut(new java.io.PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8));
 
         receiver = DeviceUtil.openReceiver(args);
+        int initialPatch = DeviceUtil.patchFilter(args);
+        currentProgram = initialPatch;
+        DeviceUtil.sendProgramChange(receiver, CHANNEL, initialPatch);
+        if (initialPatch != 0)
+            System.out.printf("  Instrument: %s  (GM patch %d)\r\n",
+                    DeviceUtil.GM_PATCH_NAMES[initialPatch], initialPatch);
 
         System.out.println("┌─────────────────────────────────────────────────────┐");
         System.out.println("│  Live Terminal Keyboard                             │");
@@ -267,8 +273,8 @@ public class LiveTerminalKeyboard {
     // ── Panic / helpers ──────────────────────────────────────────────────────
 
     static void selectPreset(int index) {
-        currentProgram = index;
         int patch = DeviceUtil.PRESET_PROGRAMS[index];
+        currentProgram = patch;
         silentPanic();
         DeviceUtil.sendProgramChange(receiver, CHANNEL, patch);
         System.out.printf("  Instrument %d: %s  (GM patch %d)\r\n",

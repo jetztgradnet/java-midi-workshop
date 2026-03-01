@@ -42,6 +42,33 @@ public class DeviceUtil {
     }
 
     /**
+     * Extracts the {@code --patch=<value>} argument from {@code args}.
+     * {@code value} may be a program number (0–127) or a partial patch name
+     * (case-insensitive substring match against {@link #GM_PATCH_NAMES}).
+     * Returns 0 (Acoustic Grand Piano) if the argument is absent or unresolvable.
+     */
+    public static int patchFilter(String[] args) {
+        for (String arg : args) {
+            if (arg.startsWith("--patch=")) {
+                String value = arg.substring("--patch=".length()).trim();
+                // Try numeric first
+                try {
+                    int p = Integer.parseInt(value);
+                    return Math.max(0, Math.min(127, p));
+                } catch (NumberFormatException ignored) {}
+                // Fall back to case-insensitive partial name match
+                String lower = value.toLowerCase();
+                for (int i = 0; i < GM_PATCH_NAMES.length; i++) {
+                    if (GM_PATCH_NAMES[i].toLowerCase().contains(lower))
+                        return i;
+                }
+                System.err.println("No GM patch matching \"" + value + "\" — using patch 0.");
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Extracts the {@code --device=<name>} value from {@code args}, or returns {@code null}.
      */
     static String deviceFilter(String[] args) {
@@ -56,7 +83,7 @@ public class DeviceUtil {
     // ── GM patch data ─────────────────────────────────────────────────────────
 
     /** Full 128-entry GM patch name list (index = program number). */
-    static final String[] GM_PATCH_NAMES = {
+    public static final String[] GM_PATCH_NAMES = {
         // 0–7 Pianos
         "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano",
         "Honky-tonk Piano", "Electric Piano 1", "Electric Piano 2", "Harpsichord", "Clavinet",
@@ -123,7 +150,7 @@ public class DeviceUtil {
     }
 
     /** Sends a PROGRAM_CHANGE; silently ignores send errors. */
-    static void sendProgramChange(Receiver receiver, int channel, int program) {
+    public static void sendProgramChange(Receiver receiver, int channel, int program) {
         try {
             receiver.send(new ShortMessage(ShortMessage.PROGRAM_CHANGE, channel, program, 0), -1);
         } catch (Exception ignored) {}

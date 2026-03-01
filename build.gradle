@@ -38,6 +38,7 @@ tasks.register('playNote', JavaExec) {
     mainClass = "${pkg}.PlayNote"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
 tasks.register('simpleSequence', JavaExec) {
@@ -47,6 +48,7 @@ tasks.register('simpleSequence', JavaExec) {
     mainClass = "${pkg}.SimpleSequence"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
 tasks.register('midiFilePlayer', JavaExec) {
@@ -57,6 +59,7 @@ tasks.register('midiFilePlayer', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('midiFile')) { args project.property('midiFile') }
     if (project.hasProperty('device'))   { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))    { args '--patch='  + project.property('patch')  }
 }
 
 tasks.register('drumPattern', JavaExec) {
@@ -84,6 +87,7 @@ tasks.register('myMelody', JavaExec) {
     mainClass = "${pkg}.exercise.MyMelody"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
 tasks.register('liveTerminalKeyboard', JavaExec) {
@@ -94,6 +98,7 @@ tasks.register('liveTerminalKeyboard', JavaExec) {
     dependsOn compileJava
     standardInput = System.in
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
 tasks.register('liveWindowKeyboard', JavaExec) {
@@ -103,6 +108,7 @@ tasks.register('liveWindowKeyboard', JavaExec) {
     mainClass = "${pkg}.LiveWindowKeyboard"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
 // ── Slide build ──────────────────────────────────────────────────────────────

@@ -20,6 +20,9 @@ public class PlayNote {
     public static void main(String[] args) throws Exception {
         // Open the requested output device (or the default synth if -Pdevice is absent).
         Receiver receiver = DeviceUtil.openReceiver(args);
+        int patch = DeviceUtil.patchFilter(args);
+        DeviceUtil.sendProgramChange(receiver, 0, patch);
+        System.out.println("Instrument: " + DeviceUtil.GM_PATCH_NAMES[patch] + " (patch " + patch + ")");
 
         // --- Build NOTE_ON message ---
         // channel 0 (MIDI channel 1), note 60 (middle C), velocity 80

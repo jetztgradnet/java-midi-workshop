@@ -129,7 +129,10 @@ public class LiveWindowKeyboard {
         }
 
         // Open initial receiver
+        int initialPatch = DeviceUtil.patchFilter(args);
+        currentProgram = initialPatch;  // set before listeners are registered
         receiver = openDevice(outputInfos.get(selectedIndex));
+        DeviceUtil.sendProgramChange(receiver, CHANNEL, initialPatch);
 
         // Device selector combo — non-focusable so it never intercepts note keys.
         // Mouse interaction (click to open, click item to select) still works fully.
@@ -170,7 +173,7 @@ public class LiveWindowKeyboard {
         deviceRow.add(deviceCombo);
 
         patchCombo = new JComboBox<>(DeviceUtil.gmPatchList());
-        patchCombo.setSelectedIndex(0);
+        patchCombo.setSelectedIndex(initialPatch);
         patchCombo.setFocusable(false);
         patchCombo.setPreferredSize(new Dimension(320, patchCombo.getPreferredSize().height));
         patchCombo.addActionListener(e -> {
