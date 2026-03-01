@@ -460,6 +460,98 @@ Ein Swing-Fenster ermöglicht echte Polyphonie — mehrere Tasten gleichzeitig.
 
 ---
 
+## Piano Roll: Musik als Text
+
+Ein **Piano Roll** bildet Zeit (Spalten) auf Tonhöhen (Zeilen) ab — wie die scrollende Anzeige in einer DAW.
+
+```
+Zeit →  Zählzeit 1      Zählzeit 2
+        | . . . | . . . |
+E5    x . . x . . . . .
+D5    . . . . x . . . .
+C5    x . . . . . . . .
+G4    . . . . . . . x .
+```
+
+- Jede Zeile = eine Tonhöhe
+- Jede Spalte = ein 16tel-Noten-Slot (konfigurierbar)
+- `x` = Note an · `-` = halten · `.` = Pause · `|` = Taktstrich (nur visuell)
+
+---
+
+## Piano-Roll-Notationsformat
+
+```
+BPM=120          # Tempo
+CHANNEL=0        # MIDI-Kanal 0–15
+RESOLUTION=16    # Spalten pro Zählzeit (4=Viertel, 8=Achtel, 16=Sechzehntel)
+PGM=Violin       # GM-Instrument (Name oder Nummer, --patch= überschreibt)
+
+# Notenzeilen: <Name>  <Raster>
+E5  |x..x....|x.......|
+D5  |....x...|..x.x...|
+C5  |x.......|x.......|
+
+# Leerzeile = neue Strophe (wird nach der vorherigen gespielt)
+E5  |x------.|
+```
+
+Notennamen: `C4`, `D#3`, `Bb5` oder MIDI-Nummer direkt `60`
+
+---
+
+## Demo: PianoRollPlayer
+
+```java
+// Textnotation parsen → Settings + NoteEvent-Liste
+ParseResult result = parseNotation(notation);
+
+// Aus NoteEvents eine Sequence bauen
+Sequence sequence = buildSequence(result);
+
+// Abspielen — gleiche Polling-Schleife wie SimpleSequence
+Sequencer sequencer = MidiSystem.getSequencer(false);
+sequencer.open();
+sequencer.getTransmitter().setReceiver(receiver);
+sequencer.setSequence(sequence);
+sequencer.setTempoInBPM(result.settings().bpm());
+sequencer.start();
+```
+
+```bash
+./gradlew pianoRoll                         # eingebettete Demo
+./gradlew pianoRoll -Pfile=my_melody.roll   # Datei laden
+./pianoRoll.sh --patch=Violin
+```
+
+---
+
+<!-- _class: -->
+<!-- backgroundColor: #fff8e1 -->
+
+## Hands-On: Piano Roll
+
+**Die eingebettete Notation in `PianoRollPlayer.java` bearbeiten — oder eine `.roll`-Datei schreiben!**
+
+1. **Note ändern** — `E5` durch `G5` ersetzen, neu starten
+2. **Halten** — `x.......` zu `x-------` ändern (lange Note)
+3. **Strophe hinzufügen** — Leerzeile, neue Zeilen darunter
+4. **(Bonus)** `my_song.roll` anlegen, `./pianoRoll.sh --file=my_song.roll` ausführen
+
+```
+BPM=140
+RESOLUTION=8
+PGM=Flute
+
+E5  |x.x.x.x.|
+C5  |x.......|
+```
+
+```bash
+./gradlew pianoRoll
+```
+---
+
 ## Ausblick
 
 | Thema | Wo nachschauen |

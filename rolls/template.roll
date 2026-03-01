@@ -1,0 +1,89 @@
+# Piano Roll Template — RESOLUTION=8 (each column = 1 eighth note, 2 cols = 1 beat)
+# Columns per bar: 8 (4 beats × 2 cols)  |  Each stanza = 2 bars = 16 columns
+# Pipes "|" mark beats (visual only, ignored by the player).
+#
+# Grid symbols:  x = note start   - = hold/extend   . = rest
+# Note names:    C4 D4 E4 ... (octave after letter;  # = sharp,  b = flat)
+#
+# Play this file:
+#   ./gradlew pianoRoll -Pfile=rolls/template.roll
+#   ./pianoRoll.sh --file=rolls/template.roll
+#
+# Convert a MIDI file to this format:
+#   ./gradlew toRoll -PmidiFile=midi/song.mid
+#   ./toRoll.sh --file=midi/song.mid --out=rolls/song.roll
+
+BPM=120
+CHANNEL=0
+RESOLUTION=8
+
+# ── Example 1 – Ode to Joy (opening phrase)  →  see midi/ode_to_joy.mid ─────────
+# Melody: E E F G | G F E D   (quarter notes = x-,  2 bars of 4/4 = 16 columns)
+G4  |..|..|..|x-|x-|..|..|..|
+F4  |..|..|x-|..|..|x-|..|..|
+E4  |x-|x-|..|..|..|..|x-|..|
+D4  |..|..|..|..|..|..|..|x-|
+
+# ── Example 2 – Bach Prelude in C (bar 1 arpeggio)  →  see midi/bach_prelude_c.mid
+# Arpeggio: C4 E4 G4 C5 E5 C5 G4 E4   (eighth notes = x,  1 bar = 8 columns)
+E5  |..|..|x.|..|
+C5  |..|.x|.x|..|
+G4  |..|x.|..|x.|
+E4  |.x|..|..|.x|
+C4  |x.|..|..|..|
+
+# ── Example 3 – Bach Minuet in G (opening, 3/4 time)  →  see midi/bach_minuet_g.mid
+# Melody: D5 G4 A4 | B4 C5 A4   (quarter notes = x-,  2 bars of 3/4 = 12 columns)
+# Note: 3/4 time → 3 beats × 2 cols = 6 cols per bar;  2 bars = 12 columns total
+D5  |x-|..|..|..|..|..|
+C5  |..|..|..|..|x-|..|
+B4  |..|..|..|x-|..|..|
+A4  |..|..|x-|..|..|x-|
+G4  |..|x-|..|..|..|..|
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ── Your turn!  Fill in the dots below.                                       ──
+# ── Each stanza = 2 bars (16 columns).  Pipe | marks each beat.              ──
+# ── Replace . with x (note start) or x followed by - (hold).                 ──
+# ── Add or remove note rows as needed.  Blank lines separate stanzas.        ──
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Stanza A ──────────────────────────────────────────────────────────────────
+C5  |..|..|..|..|..|..|..|..|
+B4  |..|..|..|..|..|..|..|..|
+A4  |..|..|..|..|..|..|..|..|
+G4  |..|..|..|..|..|..|..|..|
+F4  |..|..|..|..|..|..|..|..|
+E4  |..|..|..|..|..|..|..|..|
+D4  |..|..|..|..|..|..|..|..|
+C4  |..|..|..|..|..|..|..|..|
+
+# ── Stanza B ──────────────────────────────────────────────────────────────────
+C5  |..|..|..|..|..|..|..|..|
+B4  |..|..|..|..|..|..|..|..|
+A4  |..|..|..|..|..|..|..|..|
+G4  |..|..|..|..|..|..|..|..|
+F4  |..|..|..|..|..|..|..|..|
+E4  |..|..|..|..|..|..|..|..|
+D4  |..|..|..|..|..|..|..|..|
+C4  |..|..|..|..|..|..|..|..|
+
+# ── Stanza C ──────────────────────────────────────────────────────────────────
+C5  |..|..|..|..|..|..|..|..|
+B4  |..|..|..|..|..|..|..|..|
+A4  |..|..|..|..|..|..|..|..|
+G4  |..|..|..|..|..|..|..|..|
+F4  |..|..|..|..|..|..|..|..|
+E4  |..|..|..|..|..|..|..|..|
+D4  |..|..|..|..|..|..|..|..|
+C4  |..|..|..|..|..|..|..|..|
+
+# ── Stanza D ──────────────────────────────────────────────────────────────────
+C5  |..|..|..|..|..|..|..|..|
+B4  |..|..|..|..|..|..|..|..|
+A4  |..|..|..|..|..|..|..|..|
+G4  |..|..|..|..|..|..|..|..|
+F4  |..|..|..|..|..|..|..|..|
+E4  |..|..|..|..|..|..|..|..|
+D4  |..|..|..|..|..|..|..|..|
+C4  |..|..|..|..|..|..|..|..|

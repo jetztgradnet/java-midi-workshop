@@ -99,6 +99,30 @@ tasks.register('myMelody', JavaExec) {
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
 }
 
+tasks.register('pianoRoll', JavaExec) {
+    group = 'workshop'
+    description = 'Play a piano roll text notation (--file=<path> or built-in demo)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.PianoRollPlayer"
+    dependsOn compileJava
+    if (project.hasProperty('file'))   { args '--file='   + project.property('file')   }
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+}
+
+tasks.register('toRoll', JavaExec) {
+    group = 'workshop'
+    description = 'Convert a MIDI file to piano roll notation (-PmidiFile=<path>, -Pout=<path>)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.MidiToRoll"
+    dependsOn compileJava
+    if (project.hasProperty('midiFile'))   { args '--file='       + project.property('midiFile')   }
+    if (project.hasProperty('out'))        { args '--out='        + project.property('out')        }
+    if (project.hasProperty('track'))      { args '--track='      + project.property('track')      }
+    if (project.hasProperty('channel'))    { args '--channel='    + project.property('channel')    }
+    if (project.hasProperty('resolution')) { args '--resolution=' + project.property('resolution') }
+}
+
 tasks.register('liveTerminalKeyboard', JavaExec) {
     group = 'workshop'
     description = 'Play notes live using the terminal keyboard (-Pdevice=<name> optional)'

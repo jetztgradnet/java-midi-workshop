@@ -460,6 +460,98 @@ A Swing window gives true polyphony — hold multiple keys at once.
 
 ---
 
+## Piano Roll: Music as Text
+
+A **piano roll** maps time (columns) to pitches (rows) — just like the scrolling display in a DAW.
+
+```
+Time →  beat 1          beat 2
+        | . . . | . . . |
+E5    x . . x . . . . .
+D5    . . . . x . . . .
+C5    x . . . . . . . .
+G4    . . . . . . . x .
+```
+
+- Each row = one pitch
+- Each column = one 16th-note slot (configurable)
+- `x` = note on · `-` = hold · `.` = rest · `|` = bar line (visual only)
+
+---
+
+## Piano Roll Notation Format
+
+```
+BPM=120          # tempo
+CHANNEL=0        # MIDI channel 0–15
+RESOLUTION=16    # columns per beat (4=quarter, 8=8th, 16=16th)
+PGM=Violin       # GM instrument name or number (--patch= overrides)
+
+# Note rows: <name>  <grid>
+E5  |x..x....|x.......|
+D5  |....x...|..x.x...|
+C5  |x.......|x.......|
+
+# Blank line = new stanza (plays after the previous one)
+E5  |x------.|
+```
+
+Note names: `C4`, `D#3`, `Bb5`, or raw MIDI number `60`
+
+---
+
+## Demo: PianoRollPlayer
+
+```java
+// Parse text notation → Settings + NoteEvent list
+ParseResult result = parseNotation(notation);
+
+// Build a Sequence from NoteEvents
+Sequence sequence = buildSequence(result);
+
+// Play — same polling loop as SimpleSequence
+Sequencer sequencer = MidiSystem.getSequencer(false);
+sequencer.open();
+sequencer.getTransmitter().setReceiver(receiver);
+sequencer.setSequence(sequence);
+sequencer.setTempoInBPM(result.settings().bpm());
+sequencer.start();
+```
+
+```bash
+./gradlew pianoRoll                         # built-in demo
+./gradlew pianoRoll -Pfile=my_melody.roll   # load from file
+./pianoRoll.sh --patch=Violin
+```
+
+---
+
+<!-- _class: -->
+<!-- backgroundColor: #fff8e1 -->
+
+## Hands-On: Piano Roll
+
+**Try editing the built-in notation in `PianoRollPlayer.java` — or write a `.roll` file!**
+
+1. **Change a note** — swap `E5` for `G5`, rerun
+2. **Add a hold** — change `x.......` to `x-------` (one long note)
+3. **Add a stanza** — blank line, new set of rows
+4. **(Bonus)** Create `my_song.roll`, run `./pianoRoll.sh --file=my_song.roll`
+
+```
+BPM=140
+RESOLUTION=8
+PGM=Flute
+
+E5  |x.x.x.x.|
+C5  |x.......|
+```
+
+```bash
+./gradlew pianoRoll
+```
+---
+
 ## Beyond This Workshop
 
 | Topic | Where to look |
