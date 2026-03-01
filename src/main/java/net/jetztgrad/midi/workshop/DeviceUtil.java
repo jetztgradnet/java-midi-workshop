@@ -1,6 +1,7 @@
 package net.jetztgrad.midi.workshop;
 
 import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
@@ -33,14 +34,22 @@ public class DeviceUtil {
      */
     public static Receiver openReceiver(String[] args) throws MidiUnavailableException {
         String filter = deviceFilter(args);
+        Receiver r;
         if (filter != null) {
-            return openNamedReceiver(filter);
+            r = openNamedReceiver(filter);
+        } else {
+            // Default: built-in platform software synthesizer
+            Synthesizer synth = MidiSystem.getSynthesizer();
+            synth.open();
+            System.out.println("Output device: " + synth.getDeviceInfo().getName() + " (default)");
+            r = synth.getReceiver();
         }
-        // Default: built-in platform software synthesizer
-        Synthesizer synth = MidiSystem.getSynthesizer();
-        synth.open();
-        System.out.println("Output device: " + synth.getDeviceInfo().getName() + " (default)");
-        return synth.getReceiver();
+        if (spyFilter(args)) {
+            spyStartTime = System.currentTimeMillis();
+            System.out.println("  [spy] Logging all outgoing MIDI messages.");
+            return new SpyReceiver(r);
+        }
+        return r;
     }
 
     /**
@@ -81,6 +90,15 @@ public class DeviceUtil {
         }
         return null;
     }
+
+    /** Returns {@code true} when {@code --spy} is present in {@code args}. */
+    static boolean spyFilter(String[] args) {
+        for (String arg : args) if ("--spy".equals(arg)) return true;
+        return false;
+    }
+
+    /** Start time for SpyReceiver timestamps; set when the spy is activated. */
+    static long spyStartTime;
 
     // ── GM patch data ─────────────────────────────────────────────────────────
 
@@ -164,6 +182,46 @@ public class DeviceUtil {
     /** Returns the common name of a MIDI CC controller, or {@code ""} if unknown. */
     public static String ccName(int cc) {
         return CC_NAMES.getOrDefault(cc, "");
+    }
+
+    /**
+     * Formats a ShortMessage as a human-readable string (no timestamp prefix).
+     * Returns {@code null} for unrecognised message types.
+     * Used by MidiMonitor and SpyReceiver to share a single display format.
+     */
+    public static String formatShortMessage(ShortMessage sm) {
+        int cmd = sm.getCommand();
+        int ch  = sm.getChannel() + 1;  // 1-based
+        int d1  = sm.getData1();
+        int d2  = sm.getData2();
+        return switch (cmd) {
+            case ShortMessage.NOTE_ON -> d2 == 0
+                    ? String.format("NoteOff  %-5s  (note %3d, ch %2d)", noteName(d1), d1, ch)
+                    : String.format("NoteOn   %-5s  (note %3d, vel %3d, ch %2d)", noteName(d1), d1, d2, ch);
+            case ShortMessage.NOTE_OFF ->
+                    String.format("NoteOff  %-5s  (note %3d, ch %2d)", noteName(d1), d1, ch);
+            case ShortMessage.CONTROL_CHANGE -> {
+                String name = ccName(d1);
+                String ns = name.isEmpty() ? "" : " [" + name + "]";
+                yield String.format("CC  %3d%-14s  val %3d  (ch %2d)", d1, ns, d2, ch);
+            }
+            case ShortMessage.PROGRAM_CHANGE ->
+                    String.format("ProgramChange %3d  %-30s (ch %2d)", d1, GM_PATCH_NAMES[d1], ch);
+            case ShortMessage.PITCH_BEND -> {
+                int raw = (d2 << 7) | d1;
+                yield String.format("PitchBend  %+6d  (raw %5d, ch %2d)", raw - 8192, raw, ch);
+            }
+            default -> null;
+        };
+    }
+
+    /**
+     * Formats elapsed milliseconds since {@code startTime} as {@code [MM:SS.mmm]}.
+     * Shared by MidiMonitor and SpyReceiver.
+     */
+    public static String elapsedTimestamp(long startTime) {
+        long e = System.currentTimeMillis() - startTime;
+        return String.format("[%02d:%02d.%03d]", e / 60000, (e % 60000) / 1000, e % 1000);
     }
 
     /** Curated 10-preset list for digit-key selection (keys 1–9, 0). */
@@ -260,5 +318,26 @@ public class DeviceUtil {
         System.err.println("Run './gradlew listDevices' to see all available device names.");
         System.exit(1);
         return null; // unreachable
+    }
+
+    // ── SpyReceiver ──────────────────────────────────────────────────────────────
+
+    /** Wraps a Receiver and logs every outgoing MIDI message. Enable with {@code --spy}. */
+    private static class SpyReceiver implements Receiver {
+        private final Receiver delegate;
+        SpyReceiver(Receiver delegate) { this.delegate = delegate; }
+
+        @Override
+        public void send(MidiMessage message, long timeStamp) {
+            if (message instanceof ShortMessage sm) {
+                String formatted = formatShortMessage(sm);
+                if (formatted != null)
+                    System.out.print("  " + elapsedTimestamp(spyStartTime) + "  " + formatted + "\r\n");
+            }
+            delegate.send(message, timeStamp);
+        }
+
+        @Override
+        public void close() { delegate.close(); }
     }
 }

@@ -53,52 +53,9 @@ public class MidiMonitor {
     }
 
     static void printShortMessage(ShortMessage sm) {
-        int cmd = sm.getCommand();
-        int ch  = sm.getChannel() + 1;  // display as 1-based
-        int d1  = sm.getData1();
-        int d2  = sm.getData2();
-        String ts = timestamp();
-
-        switch (cmd) {
-            case ShortMessage.NOTE_ON -> {
-                if (d2 == 0) {
-                    // MIDI convention: NOTE_ON with velocity 0 = NoteOff
-                    System.out.printf("%s  NoteOff  %-5s  (note %3d, ch %2d)%n",
-                            ts, DeviceUtil.noteName(d1), d1, ch);
-                } else {
-                    System.out.printf("%s  NoteOn   %-5s  (note %3d, vel %3d, ch %2d)%n",
-                            ts, DeviceUtil.noteName(d1), d1, d2, ch);
-                }
-            }
-            case ShortMessage.NOTE_OFF ->
-                System.out.printf("%s  NoteOff  %-5s  (note %3d, ch %2d)%n",
-                        ts, DeviceUtil.noteName(d1), d1, ch);
-            case ShortMessage.CONTROL_CHANGE -> {
-                String name = DeviceUtil.ccName(d1);
-                String nameStr = name.isEmpty() ? "" : " [" + name + "]";
-                System.out.printf("%s  CC  %3d%-14s  val %3d  (ch %2d)%n",
-                        ts, d1, nameStr, d2, ch);
-            }
-            case ShortMessage.PROGRAM_CHANGE ->
-                System.out.printf("%s  ProgramChange %3d  %-30s (ch %2d)%n",
-                        ts, d1, DeviceUtil.GM_PATCH_NAMES[d1], ch);
-            case ShortMessage.PITCH_BEND -> {
-                // 14-bit value: LSB in d1, MSB in d2; 8192 = centre
-                int raw    = (d2 << 7) | d1;
-                int scaled = raw - 8192;
-                System.out.printf("%s  PitchBend  %+6d  (raw %5d, ch %2d)%n",
-                        ts, scaled, raw, ch);
-            }
-        }
-    }
-
-    /** Elapsed time since start as [MM:SS.mmm]. */
-    static String timestamp() {
-        long elapsed = System.currentTimeMillis() - startTime;
-        long mm  = elapsed / 60000;
-        long ss  = (elapsed % 60000) / 1000;
-        long ms  = elapsed % 1000;
-        return String.format("[%02d:%02d.%03d]", mm, ss, ms);
+        String formatted = DeviceUtil.formatShortMessage(sm);
+        if (formatted != null)
+            System.out.println(DeviceUtil.elapsedTimestamp(startTime) + "  " + formatted);
     }
 
     /**

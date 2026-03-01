@@ -39,6 +39,7 @@ tasks.register('playNote', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('simpleSequence', JavaExec) {
@@ -49,6 +50,7 @@ tasks.register('simpleSequence', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('midiFilePlayer', JavaExec) {
@@ -60,6 +62,7 @@ tasks.register('midiFilePlayer', JavaExec) {
     if (project.hasProperty('midiFile')) { args project.property('midiFile') }
     if (project.hasProperty('device'))   { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))    { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))      { args '--spy' }
 }
 
 tasks.register('drumPattern', JavaExec) {
@@ -69,6 +72,7 @@ tasks.register('drumPattern', JavaExec) {
     mainClass = "${pkg}.DrumPattern"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('programChange', JavaExec) {
@@ -78,6 +82,7 @@ tasks.register('programChange', JavaExec) {
     mainClass = "${pkg}.ProgramChange"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('midiPanic', JavaExec) {
@@ -87,6 +92,7 @@ tasks.register('midiPanic', JavaExec) {
     mainClass = "${pkg}.MidiPanic"
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('midiMonitor', JavaExec) {
@@ -107,6 +113,7 @@ tasks.register('myMelody', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('pianoRoll', JavaExec) {
@@ -118,6 +125,7 @@ tasks.register('pianoRoll', JavaExec) {
     if (project.hasProperty('file'))   { args '--file='   + project.property('file')   }
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 tasks.register('toRoll', JavaExec) {
