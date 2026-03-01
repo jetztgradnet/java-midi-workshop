@@ -80,6 +80,15 @@ tasks.register('programChange', JavaExec) {
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
 }
 
+tasks.register('midiPanic', JavaExec) {
+    group = 'workshop'
+    description = 'Send All Notes Off on all channels — clears stuck notes (-Pdevice=<name> optional)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "${pkg}.MidiPanic"
+    dependsOn compileJava
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+}
+
 tasks.register('myMelody', JavaExec) {
     group = 'workshop'
     description = 'Run the hands-on exercise: your own melody (-Pdevice=<name> optional)'

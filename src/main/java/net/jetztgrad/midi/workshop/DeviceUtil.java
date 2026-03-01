@@ -156,6 +156,16 @@ public class DeviceUtil {
         } catch (Exception ignored) {}
     }
 
+    /** Sends All Notes Off (CC 123) and Sustain Off (CC 64) on all 16 channels. */
+    public static void sendPanic(Receiver receiver) {
+        for (int ch = 0; ch < 16; ch++) {
+            try {
+                receiver.send(new ShortMessage(ShortMessage.CONTROL_CHANGE, ch, 123, 0), -1);
+                receiver.send(new ShortMessage(ShortMessage.CONTROL_CHANGE, ch,  64, 0), -1);
+            } catch (Exception ignored) {}
+        }
+    }
+
     // ── private helpers ──────────────────────────────────────────────────────
 
     private static Receiver openNamedReceiver(String filter) throws MidiUnavailableException {

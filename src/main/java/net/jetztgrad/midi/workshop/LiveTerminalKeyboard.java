@@ -288,11 +288,7 @@ public class LiveTerminalKeyboard {
 
     static void silentPanic() {
         if (receiver == null) return;
-        for (int ch = 0; ch < 16; ch++) {
-            try {
-                receiver.send(new ShortMessage(ShortMessage.CONTROL_CHANGE, ch, 123, 0), -1);
-            } catch (Exception ignored) {}
-        }
+        DeviceUtil.sendPanic(receiver);
     }
 
     static void printOctave() {

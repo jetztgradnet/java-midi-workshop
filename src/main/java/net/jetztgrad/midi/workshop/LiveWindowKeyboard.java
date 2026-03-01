@@ -366,10 +366,7 @@ public class LiveWindowKeyboard {
         if (!pressedNotes.isEmpty() || sustain) {
             System.out.println("  [Panic] All Notes Off");
         }
-        for (int ch = 0; ch < 16; ch++) {
-            sendCC(ch, 123, 0);   // All Notes Off
-            sendCC(ch, 64, 0);    // Sustain Off
-        }
+        DeviceUtil.sendPanic(receiver);
         pressedNotes.clear();
         sustain = false;
     }
