@@ -17,6 +17,7 @@ Presented at Java conferences and available for self-study.
 - How to switch instrument patches with Program Change
 - How to connect and use a USB MIDI synthesizer (Seeed XIAO)
 - How to play notes live using the computer keyboard (terminal and Swing)
+- How to monitor and inspect incoming MIDI messages in real time
 
 ---
 
@@ -57,16 +58,34 @@ cd java-midi-workshop
 
 | Command | Description |
 |---------|-------------|
-| `./gradlew listDevices` | Enumerate all available MIDI devices |
-| `./gradlew playNote` | Play a single note via the software synthesizer |
-| `./gradlew simpleSequence` | Play a programmatic C–E–G–C sequence |
-| `./gradlew midiFilePlayer` | Play the first MIDI file found in `midi/` |
-| `./gradlew midiFilePlayer -PmidiFile=midi/song.mid` | Play a specific MIDI file |
-| `./gradlew drumPattern` | Play a 4/4 kick + snare + hi-hat pattern |
-| `./gradlew programChange` | Hear the same phrase in 4 different instrument patches |
-| `./gradlew myMelody` | Run the hands-on exercise (edit `exercise/MyMelody.java` first!) |
-| `./gradlew liveTerminalKeyboard` | Play notes live by typing in the terminal |
-| `./gradlew liveWindowKeyboard` | Play notes live in a Swing window (true polyphony) |
+| `./listDevices.sh` | Enumerate all available MIDI devices |
+| `./playNote.sh` | Play a single note via the software synthesizer |
+| `./simpleSequence.sh` | Play a programmatic C–E–G–C sequence |
+| `./midiFilePlayer.sh` | Play the first MIDI file found in `midi/` |
+| `./drumPattern.sh` | Play a 4/4 kick + snare + hi-hat pattern |
+| `./programChange.sh` | Hear the same phrase in 4 different instrument patches |
+| `./myMelody.sh` | Run the hands-on exercise (edit `exercise/MyMelody.java` first!) |
+| `./liveKeyboard.sh` | Play notes live by typing in the terminal |
+| `./liveWindow.sh` | Play notes live in a Swing window (true polyphony) |
+| `./midiMonitor.sh` | Monitor incoming MIDI messages from an external device |
+| `./midiPanic.sh` | Send All Notes Off on all channels (silence stuck notes) |
+| `./pianoRoll.sh` | Play a piano roll text notation (built-in demo) |
+| `./toRoll.sh` | Convert a MIDI file to piano roll text notation |
+
+> All examples also run via `./gradlew <taskName>` — see `./gradlew tasks --group=workshop`.
+> **Windows:** use the equivalent `.bat` files (e.g. `listDevices.bat`) instead of the `.sh` scripts.
+
+### Common Parameters
+
+Most scripts accept these optional flags:
+
+| Flag | Applies to | Description |
+|------|-----------|-------------|
+| `--device=<name>` | all | Select MIDI device by partial name (case-insensitive). Default: built-in software synth. |
+| `--patch=<n\|name>` | playback scripts | GM instrument — number (0–127) or partial name, e.g. `--patch=violin`. Default: `0` (Grand Piano). |
+| `--spy` | playback scripts | Print every outgoing MIDI message to the console with timestamps. |
+| `--channel=<1-16\|all>` | `midiMonitor` | Filter display to one MIDI channel. Default: all. |
+| `--file=<path>` | `pianoRoll`, `toRoll` | Piano roll file to load / MIDI file to convert. |
 
 ---
 
@@ -83,6 +102,10 @@ java-midi-workshop/
 │   ├── ProgramChange.java     — switch GM instrument patches
 │   ├── LiveTerminalKeyboard.java — live keyboard via terminal
 │   ├── LiveWindowKeyboard.java   — live keyboard via Swing window
+│   ├── MidiMonitor.java      — monitor incoming MIDI messages with timestamps
+│   ├── MidiPanic.java        — send All Notes Off on all channels
+│   ├── PianoRollPlayer.java  — play piano roll text notation
+│   ├── MidiToRoll.java       — convert a MIDI file to piano roll notation
 │   └── exercise/
 │       └── MyMelody.java      — hands-on template with TODO stubs
 ├── midi/                      — place public-domain .mid files here

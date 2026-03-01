@@ -552,6 +552,28 @@ C5  |x.......|
 ```
 ---
 
+## Demo: MidiMonitor
+
+Watch **every incoming MIDI message** from an external device — printed live with timestamps.
+
+```
+[00:00.512]  NoteOn   C4     (note  60, vel  80, ch  1)
+[00:00.891]  NoteOff  C4     (note  60, ch  1)
+[00:01.023]  CC   64 [Sustain]        val   1  (ch  1)
+[00:01.245]  ProgramChange  40  Violin                          (ch  1)
+```
+
+```bash
+./midiMonitor.sh                      # first available input device
+./midiMonitor.sh --device=XIAO        # select device by name
+./midiMonitor.sh --channel=1          # filter to one channel
+```
+
+> **Tip:** add `--spy` to any playback script to log *outgoing* messages too:
+> `./simpleSequence.sh --spy --patch=Violin`
+
+---
+
 ## Beyond This Workshop
 
 | Topic | Where to look |
