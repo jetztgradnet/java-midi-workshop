@@ -8,6 +8,28 @@ java {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
+// The workshop examples (src/main) need no dependencies — javax.sound.midi only,
+// so they build offline. The Ableton Push 2 code lives in its own source set
+// (src/push2) with its own dependencies; it can use DeviceUtil from main.
+sourceSets {
+    push2 {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+dependencies {
+    // Push 2 display via libusb (pulls in org.usb4java:usb4java:1.3.0)
+    push2Implementation 'org.deepsymmetry:wayang:0.1.8'
+    // usb4java 1.3.0 ships no Apple Silicon native; this jar provides
+    // /org/usb4java/darwin-aarch64/libusb4java.dylib (GPL-3, from sdrtrunk)
+    push2RuntimeOnly 'io.github.dsheirer:libusb4java-darwin-aarch64:1.3.1'
+}
+
 // Default main class for `./gradlew run`
 application {
     mainClass = 'net.jetztgrad.midi.workshop.ListDevices'
@@ -160,6 +182,51 @@ tasks.register('liveWindowKeyboard', JavaExec) {
     dependsOn compileJava
     if (project.hasProperty('device')) { args '--device=' + project.property('device') }
     if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+}
+
+// ── Ableton Push 2 ───────────────────────────────────────────────────────────
+// Source set src/push2. Requires a Push 2 on USB and Ableton Live quit
+// (libusb comes bundled with the usb4java native library).
+//   ./gradlew push2Hello -Pdevice="IAC Bus" -Ppatch=synth
+// -Ppush=<partial-port-name> overrides the Push MIDI port (default "Live Port").
+// -Pdisplay=ffm drives the LCD via libusb + Java FFM instead of Wayang (needs brew install libusb).
+// -Platency=<ms> sets the built-in synth's audio buffer (default 20 ms; Gervill's own is 120).
+
+// Copies the push2 runtime jars to build/runtime-libs so the push2 launchers can
+// exec java directly (clean Ctrl+C / shutdown hooks, no Gradle daemon in between).
+tasks.register('runtimeLibs', Sync) {
+    from configurations.push2RuntimeClasspath
+    into layout.buildDirectory.dir('runtime-libs')
+}
+
+tasks.register('push2Hello', JavaExec) {
+    group = 'push2'
+    description = 'Push 2 hello world: pads play notes, LCD shows the grid (-Pdevice=<synth> optional)'
+    classpath = sourceSets.push2.runtimeClasspath
+    jvmArgs '--enable-native-access=ALL-UNNAMED',                    // JNI (usb4java) and FFM (libusb)
+            '--add-exports', 'java.desktop/com.sun.media.sound=ALL-UNNAMED' // low-latency Gervill
+    mainClass = "${pkg}.push2.Push2Hello"
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('patch'))  { args '--patch='  + project.property('patch')  }
+    if (project.hasProperty('spy'))    { args '--spy' }
+    if (project.hasProperty('push'))   { args '--push='   + project.property('push')   }
+    if (project.hasProperty('display')) { args '--display=' + project.property('display') }
+    if (project.hasProperty('latency')) { args '--latency=' + project.property('latency') }
+}
+
+tasks.register('notesweeper', JavaExec) {
+    group = 'push2'
+    description = 'Notesweeper: Minesweeper on Push 2, find the band (-Pdevice=<synth>, -Pboom=<file.mid> optional)'
+    classpath = sourceSets.push2.runtimeClasspath
+    jvmArgs '--enable-native-access=ALL-UNNAMED',                    // JNI (usb4java) and FFM (libusb)
+            '--add-exports', 'java.desktop/com.sun.media.sound=ALL-UNNAMED' // low-latency Gervill
+    mainClass = "${pkg}.push2.Notesweeper"
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('boom'))   { args '--boom='   + project.property('boom')   }
+    if (project.hasProperty('push'))   { args '--push='   + project.property('push')   }
+    if (project.hasProperty('display')) { args '--display=' + project.property('display') }
+    if (project.hasProperty('latency')) { args '--latency=' + project.property('latency') }
+    if (project.hasProperty('spy'))    { args '--spy' }
 }
 
 // ── Slide build ──────────────────────────────────────────────────────────────

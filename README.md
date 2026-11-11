@@ -31,6 +31,7 @@ Presented at Java conferences and available for self-study.
 | OS | macOS 12+ or Windows 10/11 |
 
 No external Java libraries required — only `javax.sound.midi` (bundled in the JDK).
+(The optional Ableton Push 2 code in `src/push2/` is a separate source set with its own libraries — Wayang / usb4java — fetched by Gradle only when you build or run it.)
 
 ---
 

@@ -51,6 +51,8 @@ desktop.ini
 # ── Agents ───────────────────────────────────────────────────────────────────
 .claude
 spec
+# Personal AI prompts / task notes (kept locally, never committed)
+prompts/
 
 # ── Slides — generated HTML (pre-built versions ARE committed) ─────────────
 # Uncomment the lines below if you do NOT want to commit pre-built HTML:

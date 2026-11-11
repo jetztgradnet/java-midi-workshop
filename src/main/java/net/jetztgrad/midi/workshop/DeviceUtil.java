@@ -44,12 +44,15 @@ public class DeviceUtil {
             System.out.println("Output device: " + synth.getDeviceInfo().getName() + " (default)");
             r = synth.getReceiver();
         }
-        if (spyFilter(args)) {
-            spyStartTime = System.currentTimeMillis();
-            System.out.println("  [spy] Logging all outgoing MIDI messages.");
-            return new SpyReceiver(r);
-        }
-        return r;
+        return withSpy(r, args);
+    }
+
+    /** Wraps {@code r} in a logging SpyReceiver when {@code --spy} is in {@code args}. */
+    public static Receiver withSpy(Receiver r, String[] args) {
+        if (!spyFilter(args)) return r;
+        spyStartTime = System.currentTimeMillis();
+        System.out.println("  [spy] Logging all outgoing MIDI messages.");
+        return new SpyReceiver(r);
     }
 
     /**
@@ -285,7 +288,7 @@ public class DeviceUtil {
 
     // ── private helpers ──────────────────────────────────────────────────────
 
-    private static Transmitter openNamedTransmitter(String filter) throws MidiUnavailableException {
+    public static Transmitter openNamedTransmitter(String filter) throws MidiUnavailableException {
         for (MidiDevice.Info info : MidiSystem.getMidiDeviceInfo()) {
             if (info.getName().toLowerCase().contains(filter.toLowerCase())) {
                 MidiDevice device = MidiSystem.getMidiDevice(info);
@@ -302,7 +305,7 @@ public class DeviceUtil {
         return null; // unreachable
     }
 
-    private static Receiver openNamedReceiver(String filter) throws MidiUnavailableException {
+    public static Receiver openNamedReceiver(String filter) throws MidiUnavailableException {
         for (MidiDevice.Info info : MidiSystem.getMidiDeviceInfo()) {
             if (info.getName().toLowerCase().contains(filter.toLowerCase())) {
                 MidiDevice device = MidiSystem.getMidiDevice(info);
