@@ -12,8 +12,8 @@ a Gradle build — all self-contained, no external dependencies.
 |------|-------|
 | Package root | `net.jetztgrad.midi.workshop` |
 | Exercise sub-package | `net.jetztgrad.midi.workshop.exercise` |
-| Java version | 21 (JDK toolchain via Gradle) |
-| Build tool | Gradle wrapper (`./gradlew`), targets 8.13 |
+| Java version | 25 (JDK toolchain via Gradle) |
+| Build tool | Gradle wrapper (`./gradlew`), 9.2.1 |
 | Runtime deps | None — `javax.sound.midi` only |
 | Language policy | All participant-facing content in **English + German** (parallel files) |
 

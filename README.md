@@ -25,7 +25,7 @@ Presented at Java conferences and available for self-study.
 
 | Requirement | Version / Notes |
 |-------------|----------------|
-| JDK | 21 or higher |
+| JDK | 25 or higher |
 | Git | any recent version |
 | IDE / Editor | IntelliJ IDEA, VS Code, Eclipse, or any editor |
 | OS | macOS 12+ or Windows 10/11 |

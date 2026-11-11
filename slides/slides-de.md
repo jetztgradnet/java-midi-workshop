@@ -591,7 +591,7 @@ Zeigt **jede eingehende MIDI-Nachricht** eines externen Geräts — live mit Zei
 
 ## Ressourcen
 
-- **JavaDoc** — [`javax.sound.midi`](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/sound/midi/package-summary.html)
+- **JavaDoc** — [`javax.sound.midi`](https://docs.oracle.com/en/java/javase/25/docs/api/java.desktop/javax/sound/midi/package-summary.html)
 - **General-MIDI-Spezifikation** — midi.org/specifications
 - **MIDI-Notentabelle** — `cheatsheets/midi-commands-de.md`
 - **OS-Einrichtung** — `cheatsheets/os-setup-de.md`

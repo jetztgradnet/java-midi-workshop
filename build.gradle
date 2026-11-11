@@ -4,7 +4,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -169,17 +169,18 @@ tasks.register('liveWindowKeyboard', JavaExec) {
 //   npx --yes @marp-team/marp-cli@latest slides/slides.md    --html -o slides/slides.html
 //   npx --yes @marp-team/marp-cli@latest slides/slides-de.md --html -o slides/slides-de.html
 
+tasks.register('buildSlidesEn', Exec) {
+    commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
+            'slides/slides.md', '--html', '-o', 'slides/slides.html'
+}
+
+tasks.register('buildSlidesDe', Exec) {
+    commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
+            'slides/slides-de.md', '--html', '-o', 'slides/slides-de.html'
+}
+
 tasks.register('buildSlides') {
     group = 'workshop'
     description = 'Rebuild slide HTML from Marp markdown sources (requires npx / Node.js)'
-    doLast {
-        exec {
-            commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
-                    'slides/slides.md', '--html', '-o', 'slides/slides.html'
-        }
-        exec {
-            commandLine 'npx', '--yes', '@marp-team/marp-cli@latest',
-                    'slides/slides-de.md', '--html', '-o', 'slides/slides-de.html'
-        }
-    }
+    dependsOn 'buildSlidesEn', 'buildSlidesDe'
 }

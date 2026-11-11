@@ -4,18 +4,18 @@ Please complete these steps **before** the workshop begins. The whole setup take
 
 ---
 
-## 1. Install JDK 21
+## 1. Install JDK 25
 
 ```bash
 java -version
 ```
 
-Expected output: `openjdk version "21.x.x" ...`
+Expected output: `openjdk version "25.x.x" ...`
 
-**Install JDK 21 if needed:**
-- **macOS** (Homebrew): `brew install temurin@21`
+**Install JDK 25 if needed:**
+- **macOS** (Homebrew): `brew install temurin@25`
 - **macOS** (manual): https://adoptium.net
-- **Windows**: https://adoptium.net → select JDK 21
+- **Windows**: https://adoptium.net → select JDK 25
 
 Make sure `java` is on your PATH after installation.
 

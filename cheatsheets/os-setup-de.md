@@ -143,10 +143,10 @@ rm -rf ~/.gradle/wrapper/dists/gradle-8*
 ### Java nicht gefunden
 
 ```bash
-java -version      # sollte 21.x anzeigen
+java -version      # sollte 25.x anzeigen
 where java         # (Windows) Pfad anzeigen
 which java         # (macOS) Pfad anzeigen
 
 # macOS: JAVA_HOME setzen
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
 ```

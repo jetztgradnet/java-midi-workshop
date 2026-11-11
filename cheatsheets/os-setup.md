@@ -144,9 +144,9 @@ rm -rf ~/.gradle/wrapper/dists/gradle-8*
 ### Java not found
 
 ```bash
-java -version      # should show 21.x
+java -version      # should show 25.x
 which java         # should return a path
 
 # macOS (Homebrew/SDKMAN): reload shell or set JAVA_HOME
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export JAVA_HOME=$(/usr/libexec/java_home -v 25)
 ```

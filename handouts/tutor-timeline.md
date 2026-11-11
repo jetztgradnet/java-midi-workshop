@@ -99,6 +99,6 @@
 | No sound on `playNote` | Volume muted | Check OS volume, not just app |
 | `./gradlew: Permission denied` | Missing execute bit | `chmod +x gradlew` |
 | Gradle download stuck | No internet | Use mobile hotspot or pre-download |
-| Compile error | Wrong JDK (< 21) | `java -version` must show 21+ |
+| Compile error | Wrong JDK (< 25) | `java -version` must show 25+ |
 | Note cuts off early | EOT tick too soon | Move `eot` tick past last note |
 | XIAO not showing | Bad USB cable | Try different cable |

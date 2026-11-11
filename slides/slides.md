@@ -591,7 +591,7 @@ Watch **every incoming MIDI message** from an external device — printed live w
 
 ## Resources
 
-- **JavaDoc** — [`javax.sound.midi`](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/sound/midi/package-summary.html)
+- **JavaDoc** — [`javax.sound.midi`](https://docs.oracle.com/en/java/javase/25/docs/api/java.desktop/javax/sound/midi/package-summary.html)
 - **General MIDI spec** — midi.org/specifications
 - **MIDI note chart** — `cheatsheets/midi-commands.md`
 - **OS setup guide** — `cheatsheets/os-setup.md`

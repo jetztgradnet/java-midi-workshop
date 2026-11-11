@@ -99,6 +99,6 @@
 | Kein Ton bei `playNote` | Lautstärke stummgeschaltet | OS-Lautstärke prüfen, nicht nur App |
 | `./gradlew: Keine Berechtigung` | Fehlendes Execute-Bit | `chmod +x gradlew` |
 | Gradle-Download hängt | Kein Internet | Mobilen Hotspot verwenden oder vorab herunterladen |
-| Kompilierfehler | Falsches JDK (< 21) | `java -version` muss 21+ zeigen |
+| Kompilierfehler | Falsches JDK (< 25) | `java -version` muss 25+ zeigen |
 | Note bricht zu früh ab | EOT-Tick zu früh | EOT-Tick hinter letzte Note verschieben |
 | XIAO nicht erkannt | Defektes USB-Kabel | Anderes Kabel ausprobieren |
