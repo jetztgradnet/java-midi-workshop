@@ -31,7 +31,7 @@ Presented at Java conferences and available for self-study.
 | OS | macOS 12+ or Windows 10/11 |
 
 No external Java libraries required — only `javax.sound.midi` (bundled in the JDK).
-(The optional Ableton Push 2 code in `src/push2/` is a separate source set with its own libraries — Wayang / usb4java — fetched by Gradle only when you build or run it.)
+(The optional [Ableton Push 2 apps](#ableton-push-2-optional) in `src/push2/` are a separate source set with their own libraries, fetched by Gradle only when you build or run them.)
 
 ---
 
@@ -72,8 +72,12 @@ cd java-midi-workshop
 | `./midiPanic.sh` | Send All Notes Off on all channels (silence stuck notes) |
 | `./pianoRoll.sh` | Play a piano roll text notation (built-in demo) |
 | `./toRoll.sh` | Convert a MIDI file to piano roll text notation |
+| `./push2Hello.sh` | *Ableton Push 2:* hello world — pads play notes, the display mirrors the grid |
+| `./notesweeper.sh` | *Ableton Push 2:* Notesweeper — Minesweeper where you find a band instead of mines |
+| `./push2Jam.sh` | *Ableton Push 2:* jam over the Notesweeper band, one pad column per instrument |
 
-> All examples also run via `./gradlew <taskName>` — see `./gradlew tasks --group=workshop`.
+> All examples also run via `./gradlew <taskName>` — see `./gradlew tasks --group=workshop`
+> (Push 2 apps: `./gradlew tasks --group=push2`).
 > **Windows:** use the equivalent `.bat` files (e.g. `listDevices.bat`) instead of the `.sh` scripts.
 
 ### Common Parameters
@@ -87,6 +91,39 @@ Most scripts accept these optional flags:
 | `--spy` | playback scripts | Print every outgoing MIDI message to the console with timestamps. |
 | `--channel=<1-16\|all>` | `midiMonitor` | Filter display to one MIDI channel. Default: all. |
 | `--file=<path>` | `pianoRoll`, `toRoll` | Piano roll file to load / MIDI file to convert. |
+
+---
+
+## Ableton Push 2 (optional)
+
+An [Ableton Push 2](https://www.ableton.com/push/) controller can be driven directly from Java:
+pads, buttons and encoders are plain MIDI, and the 960×160 colour display is reached over USB
+(protocol: [Ableton/push-interface](https://github.com/Ableton/push-interface)).
+
+**You need:** a Push 2 connected via USB *before* starting the app, and **Ableton Live quit**
+(it claims the Push's MIDI ports and display). Sound comes from the built-in Java synthesizer
+or any MIDI device via `--device=<name>`.
+
+| App | What it does |
+|-----|--------------|
+| `./push2Hello.sh` | Lights the pads, plays a note per pad, shows "Hello, Push 2!" on the display |
+| `./notesweeper.sh` | **Notesweeper** — 10 band members hide on the 8×8 pads. *Tap* a pad to reveal it: its note tells you how many members are next to it. *Hold* a pad (or Shift + tap) to invite a member — if you're right, their part joins the looping groove; reveal one by accident and it goes *boom*. 3 lives; New starts a new round. Win, and the board becomes a jam session. |
+| `./push2Jam.sh` | **Jam session** right away: the groove plays, and each pad column is one instrument (bottom to top: A minor scale, or 8 drum sounds). The encoder above a column sets how loud you play it, the master encoder the band; the button below a column switches its groove part on/off, Play starts/stops the band. |
+
+Extra flags for the Push 2 apps (in addition to `--device`, `--patch` and `--spy`):
+
+| Flag | Applies to | Description |
+|------|-----------|-------------|
+| `--latency=<ms>` | all three | Audio buffer of the built-in synth. Default: 20 ms (Java's own default, 120 ms, feels sluggish). Raise it if you hear crackles. |
+| `--display=wayang\|ffm` | all three | How the display is driven: `wayang` (default, Wayang library) or `ffm` (plain Java calling libusb via the Foreign Function & Memory API; needs `brew install libusb` on macOS). |
+| `--push=<name>` | all three | Push MIDI port by partial name. Default: `Live Port`. |
+| `--boom=<file.mid>` | `notesweeper` | MIDI file to play when a band member blows up. |
+| `--band=<names>` | `push2Jam` | Up to 8 instruments, left to right, e.g. `--band=Kick,Bass,Keys,Lead`. Choose from Kick, Snare, Hi-hat, Clap, Bass, Keys, Pad, Arp, Lead, Brass. |
+
+The Push 2 code lives in its own Gradle source set (`src/push2/`), so the workshop examples
+stay dependency-free. Its libraries — [Wayang](https://github.com/Deep-Symmetry/wayang) and
+[usb4java](http://usb4java.org/), plus a native `libusb4java` build for Apple Silicon (GPL-3) —
+are downloaded by Gradle only when you build or run a Push 2 app.
 
 ---
 
@@ -109,6 +146,15 @@ java-midi-workshop/
 │   ├── MidiToRoll.java       — convert a MIDI file to piano roll notation
 │   └── exercise/
 │       └── MyMelody.java      — hands-on template with TODO stubs
+├── src/push2/java/net/jetztgrad/midi/workshop/push2/   — optional Ableton Push 2 apps
+│   ├── Push2.java             — pads, buttons, palette, display (USB)
+│   ├── LibUsbDisplay.java     — display via libusb + Java FFM
+│   ├── Push2Hello.java        — hello world
+│   ├── Notesweeper.java       — the game
+│   ├── SweeperBoard.java      — game rules (no MIDI)
+│   ├── BandLoop.java          — the band's looping groove
+│   ├── JamSession.java        — jam mode (pads as keyboard)
+│   └── Push2Jam.java          — standalone jam app
 ├── midi/                      — place public-domain .mid files here
 ├── slides/
 │   ├── slides.md              — Marp source (English)
@@ -165,7 +211,7 @@ The `midi/` directory is ready for royalty-free MIDI files. See [`midi/README.md
 
 ## License
 
-The source code in this repository is licensed under the [MIT License](LICENSE).
+The source code in this repository is licensed under the [Apache License 2.0](LICENSE).
 
 Workshop materials (slides, cheat sheets, handouts) are licensed under [Creative Commons CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
