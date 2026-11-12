@@ -66,6 +66,20 @@ final class BandLoop {
             new Member("Lead",   4,     80, 76, new Color(255,  40,  50), aMinor(69)),   // Lead 1 (square), A4
             new Member("Brass",  5,     61, 64, new Color(255, 170, 120), aMinor(57)));  // Brass Section, A3
 
+    /**
+     * Pad colour per member: the Push default-palette entry closest to its colour
+     * (unique per member; no SysEx needed). Draw {@link #memberColor} on the LCD so
+     * screen and pads match.
+     */
+    static final int[] MEMBER_PAD = new int[MEMBERS.size()];
+    static {
+        java.util.Set<Integer> taken = new java.util.HashSet<>();
+        for (int m = 0; m < MEMBER_PAD.length; m++)
+            taken.add(MEMBER_PAD[m] = Push2.nearestPaletteIndex(MEMBERS.get(m).color(), taken));
+    }
+
+    static Color memberColor(int m) { return Push2.paletteColor(MEMBER_PAD[m]); }
+
     static final int BPM         = 108;
     static final int TICKS_16TH  = 6;               // resolution 24 PPQ → 6 ticks per 16th
     static final int BARS        = 4;

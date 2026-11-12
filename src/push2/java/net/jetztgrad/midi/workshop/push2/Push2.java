@@ -65,6 +65,7 @@ public final class Push2 {
     // the default palette.
 
     public static final int BLACK = 0;
+    public static final int LIGHT_GREY = 122;
     public static final int BLUE  = 125;
     public static final int GREEN = 126;
     public static final int RED   = 127;
@@ -165,6 +166,15 @@ public final class Push2 {
     public static final int CC_NEW    = 87;
     /** The 8 RGB buttons below the display: CC 20 (left) … 27 (right). */
     public static final int CC_LOWER_FIRST = 20;
+
+    // Encoders send relative CCs: the 8 above the display CC 71–78, master CC 79.
+    public static final int CC_ENCODER_FIRST  = 71;
+    public static final int CC_MASTER_ENCODER = 79;
+
+    /** Encoder steps: 1–63 = turned right, 127–64 = left (two's complement). */
+    public static int encoderDelta(int value) {
+        return value < 64 ? value : value - 128;
+    }
 
     public static void setButton(Receiver push, int cc, int value) {
         setButton(push, cc, value, ANIM_NONE);

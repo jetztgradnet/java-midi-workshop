@@ -17,7 +17,6 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -47,16 +46,10 @@ import java.util.concurrent.TimeUnit;
  *   • Clear the board (or find everyone) to win; lose all 3 lives and the band
  *     breaks up. Press NEW for another round.
  *
- * Jam mode (after a win): the pads become a keyboard over the running groove.
- *   • Each column is a band member you found, in the order you found them (left
- *     to right, at most 8; blown-up members are out) — right under its slot on
- *     the display. Bottom to top: the A minor scale (A B C D E F G A); drum
- *     columns get 8 drum / percussion sounds.
- *   • The encoder above a column sets how loud you play that member (middle =
- *     your pad velocity, plus a boost of JAM_BOOST). The master encoder sets the
- *     background groove for the whole band (it drops to 60 % when the jam starts).
- *   • The button below a column mutes / un-mutes that member's groove part —
- *     drop the lead and play it yourself. PLAY starts / stops the groove.
+ * Bonus after a win: a {@link JamSession} — the pads become a keyboard over the
+ * running groove, one column per band member you found (in the order you found
+ * them; blown-up members are out). NEW leaves it for the next round.
+ * The same jam mode runs standalone as {@link Push2Jam}.
  *
  * Game logic runs on a single thread: MIDI input and timers are posted to
  * {@link #game}, so no locking is needed.
@@ -68,12 +61,6 @@ public class Notesweeper {
     static final int  LIVES         = 3;
     static final long LONG_PRESS_MS = 400;
     static final long JAM_DELAY_MS  = 2500;   // after the win fanfare
-    static final int  JAM_MASTER    = 76;     // band level in jam mode: 60 % of 127
-    static final int  LIVE_UNITY    = 64;     // live level where pad velocity passes unscaled (encoder middle)
-    static final int  JAM_BOOST     = 25;     // added to every live note, so you cut through the groove
-    static final int  CC_ENCODER_FIRST = 71;  // encoders above the display: CC 71–78
-    static final int  CC_MASTER     = 79;     // master encoder
-    static final int  PRESSED       = 122;    // default palette light grey — no SysEx needed
 
     // Game-sound channels (the band uses 0–5 and 9)
     static final int CH_COUNT = 6;     // Celesta — neighbour-count notes
@@ -96,7 +83,6 @@ public class Notesweeper {
     // the entry closest to each intended colour. The LCD draws the palette's own
     // RGB for these indices, so screen and pads show the same colour.
     static final int[] NUMBER_PAD = new int[NUMBER_COLORS.length];   // [0] = black
-    static final int[] MEMBER_PAD = new int[BandLoop.MEMBERS.size()];
     static final int   HIDDEN_PAD, HELD_PAD;
     static {
         Set<Integer> taken = new HashSet<>();
@@ -104,12 +90,7 @@ public class Notesweeper {
             taken.add(NUMBER_PAD[n] = Push2.nearestPaletteIndex(NUMBER_COLORS[n], taken));
         HIDDEN_PAD = Push2.nearestPaletteIndex(HIDDEN_COLOR, taken);
         HELD_PAD   = Push2.nearestPaletteIndex(HELD_COLOR, taken);
-        taken.clear();                                               // members: unique among themselves
-        for (int m = 0; m < MEMBER_PAD.length; m++)
-            taken.add(MEMBER_PAD[m] = Push2.nearestPaletteIndex(BandLoop.MEMBERS.get(m).color(), taken));
-    }
-
-    static Color memberColor(int m) { return Push2.paletteColor(MEMBER_PAD[m]); }
+    }   // member colours: BandLoop.MEMBER_PAD / memberColor
     static Color numberColor(int n) { return Push2.paletteColor(NUMBER_PAD[n]); }
     static final Color HIDDEN_LCD = Push2.paletteColor(HIDDEN_PAD);
 
@@ -133,6 +114,7 @@ public class Notesweeper {
     final ScheduledFuture<?>[][] held = new ScheduledFuture<?>[Push2.GRID][Push2.GRID];
     final int[][] heldVelocity = new int[Push2.GRID][Push2.GRID];
     final List<Integer> lineup = new ArrayList<>();   // members in the order they joined
+    JamSession jam;                                   // non-null in State.JAM
 
     Notesweeper(Receiver push, Receiver synth, Push2.Display display, File boomFile) throws Exception {
         this.push = push;
@@ -169,7 +151,7 @@ public class Notesweeper {
             Push2.clearPads(push);
             Push2.setButton(push, Push2.CC_NEW, 0);
             Push2.setButton(push, Push2.CC_SHIFT, 0);
-            sweeper.jamButtonsOff();
+            JamSession.buttonsOff(push);
             DeviceUtil.sendPanic(synth);
             if (display != null) display.close();
             pads.close();
@@ -187,20 +169,10 @@ public class Notesweeper {
             int cc = sm.getData1();
             boolean pressed = sm.getData2() > 0;
             if (cc == Push2.CC_SHIFT) shift = pressed;
-            if (cc == Push2.CC_NEW && pressed) newGame();
-            if (state != State.JAM) return;
-            if (cc >= CC_ENCODER_FIRST && cc < CC_ENCODER_FIRST + Push2.GRID) {
-                turnLevel(cc - CC_ENCODER_FIRST, encoderDelta(sm.getData2()));
-            } else if (cc == CC_MASTER) {
-                band.setMaster(band.master() + encoderDelta(sm.getData2()));
-                redraw();
-            } else if (pressed) {
-                if (cc == Push2.CC_PLAY) toggleBand();
-                if (cc >= Push2.CC_LOWER_FIRST && cc < Push2.CC_LOWER_FIRST + Push2.GRID)
-                    toggleTrack(cc - Push2.CC_LOWER_FIRST);
-            }
-            return;
+            if (cc == Push2.CC_NEW && pressed) { newGame(); return; }
         }
+        if (state == State.JAM) { jam.onMidi(sm); return; }
+        if (cmd == ShortMessage.CONTROL_CHANGE) return;
         if ((cmd != ShortMessage.NOTE_ON && cmd != ShortMessage.NOTE_OFF) || !Push2.isPad(sm.getData1())) return;
         int x = Push2.padX(sm.getData1()), y = Push2.padY(sm.getData1());
         if (cmd == ShortMessage.NOTE_ON && sm.getData2() > 0) padDown(x, y, sm.getData2());
@@ -208,7 +180,6 @@ public class Notesweeper {
     }
 
     void padDown(int x, int y, int velocity) {
-        if (state == State.JAM) { jamDown(x, y, velocity); return; }
         if (state != State.PLAYING) return;
         if (board.isFlagged(x, y)) {                         // say hello to a band member
             Member m = BandLoop.MEMBERS.get(board.memberAt(x, y));
@@ -230,7 +201,6 @@ public class Notesweeper {
     }
 
     void padUp(int x, int y) {
-        if (state == State.JAM) { jamUp(x, y); return; }
         ScheduledFuture<?> pending = held[x][y];
         if (pending == null) return;                         // long press already fired
         pending.cancel(false);
@@ -318,7 +288,7 @@ public class Notesweeper {
         for (int m = 0; m < BandLoop.MEMBERS.size(); m++) {  // show who was hiding where
             Cell c = board.find(m);
             if (board.isHidden(c.x(), c.y()))
-                Push2.animatePad(push, c.x(), c.y(), Push2.BLACK, MEMBER_PAD[m], Push2.ANIM_BLINK);
+                Push2.animatePad(push, c.x(), c.y(), Push2.BLACK, BandLoop.MEMBER_PAD[m], Push2.ANIM_BLINK);
         }
         Push2.setButton(push, Push2.CC_NEW, 127, Push2.ANIM_BLINK);
         status = "The band broke up. Press NEW to try again.";
@@ -358,7 +328,8 @@ public class Notesweeper {
         DeviceUtil.sendPanic(synth);
         board = new SweeperBoard(BandLoop.MEMBERS.size(), random);
         lineup.clear();
-        jamButtonsOff();
+        jam = null;
+        JamSession.buttonsOff(push);
         state = State.PLAYING;
         lives = LIVES;
         status = "Tap to reveal · hold (or Shift+tap) to invite";
@@ -371,110 +342,14 @@ public class Notesweeper {
         redraw();
     }
 
-    // ── Jam mode ─────────────────────────────────────────────────────────────
-
-    final int[][] sounding = new int[Push2.GRID][Push2.GRID];   // note held per pad (0 = none)
-    final int[] liveLevel = new int[BandLoop.MEMBERS.size()];    // 0–127 per member, LIVE_UNITY = 1×
-    String lastPlayed = "";
-
-    /** Column x plays this member, or -1 if unused (at most 8 members, in join order). */
-    int columnMember(int x) {
-        return x < Math.min(lineup.size(), Push2.GRID) ? lineup.get(x) : -1;
-    }
+    // ── Jam mode (bonus) ─────────────────────────────────────────────────────
 
     void enterJam() {
         state = State.JAM;
-        for (int[] column : sounding) Arrays.fill(column, 0);
-        lastPlayed = "";
-        Arrays.fill(liveLevel, LIVE_UNITY);
-        band.setMaster(JAM_MASTER);
-        for (int y = 0; y < Push2.GRID; y++)
-            for (int x = 0; x < Push2.GRID; x++)
-                showKey(x, y);
-        for (int x = 0; x < Push2.GRID; x++) showTrackButton(x);
-        showPlayButton();
+        jam = new JamSession(push, synth, display, band, lineup, "next round");
+        jam.start();
         Push2.setButton(push, Push2.CC_NEW, 127);
         Push2.setButton(push, Push2.CC_SHIFT, 0);
-        status = "Jam! One column per band member, low A at the bottom.";
-        redraw();
-    }
-
-    void jamDown(int x, int y, int velocity) {
-        int m = columnMember(x);
-        if (m < 0) return;
-        Member member = BandLoop.MEMBERS.get(m);
-        int note = member.keys()[y];
-        int out = liveVelocity(velocity, liveLevel[m]);
-        if (out == 0) return;                                    // turned all the way down
-        send(ShortMessage.NOTE_ON, member.liveChannel(), note, out);
-        sounding[x][y] = note;
-        Push2.setPad(push, x, y, PRESSED);
-        lastPlayed = member.name() + (member.channel() == BandLoop.DRUMS ? "" : "  " + DeviceUtil.noteName(note))
-                + "  vel " + velocity + " \u2192 " + out;
-        redraw();
-    }
-
-    void jamUp(int x, int y) {
-        int m = columnMember(x);
-        if (m < 0 || sounding[x][y] == 0) return;
-        send(ShortMessage.NOTE_OFF, BandLoop.MEMBERS.get(m).liveChannel(), sounding[x][y], 0);
-        sounding[x][y] = 0;
-        showKey(x, y);
-    }
-
-    void toggleBand() {
-        band.toggle();
-        showPlayButton();
-        status = band.isRunning() ? "Band is back in." : "Band stopped — you're solo. PLAY to bring them back.";
-        redraw();
-    }
-
-    void toggleTrack(int x) {
-        int m = columnMember(x);
-        if (m < 0) return;
-        band.setMuted(m, !band.isMuted(m), synth);
-        showTrackButton(x);
-        status = BandLoop.MEMBERS.get(m).name() + (band.isMuted(m) ? " sits out — your turn." : " plays along again.");
-        redraw();
-    }
-
-    void turnLevel(int x, int delta) {
-        int m = columnMember(x);
-        if (m < 0) return;
-        liveLevel[m] = Math.max(0, Math.min(127, liveLevel[m] + delta));
-        redraw();
-    }
-
-    /** Pad velocity × level (LIVE_UNITY = 1×, up to ~2×) + JAM_BOOST, capped at 127; level 0 = silent. */
-    static int liveVelocity(int padVelocity, int level) {
-        if (level == 0) return 0;
-        return Math.min(127, padVelocity * level / LIVE_UNITY + JAM_BOOST);
-    }
-
-    /** Encoders send relative steps: 1–63 = right, 127–64 = left (two's complement). */
-    static int encoderDelta(int value) {
-        return value < 64 ? value : value - 128;
-    }
-
-    /** Every pad in a column shows that member's palette entry; unused columns stay dark. */
-    void showKey(int x, int y) {
-        int m = columnMember(x);
-        Push2.setPad(push, x, y, m < 0 ? Push2.BLACK : MEMBER_PAD[m]);
-    }
-
-    /** Button below a column: lit while the member's groove part plays, off when muted. */
-    void showTrackButton(int x) {
-        int m = columnMember(x);
-        Push2.setButton(push, Push2.CC_LOWER_FIRST + x, m < 0 || band.isMuted(m) ? 0 : MEMBER_PAD[m]);
-    }
-
-    void showPlayButton() {
-        Push2.setButton(push, Push2.CC_PLAY, band.isRunning() ? Push2.GREEN : 0);
-    }
-
-    void jamButtonsOff() {
-        for (int x = 0; x < Push2.GRID; x++) Push2.setButton(push, Push2.CC_LOWER_FIRST + x, 0);
-        Push2.setButton(push, Push2.CC_PLAY, 0);
     }
 
     // ── Pads & sound ─────────────────────────────────────────────────────────
@@ -486,15 +361,7 @@ public class Notesweeper {
 
     /** Found members pulse, so they stand out from the static number colours. */
     void showMember(int x, int y, int m) {
-        Push2.animatePad(push, x, y, Push2.BLACK, MEMBER_PAD[m], Push2.ANIM_PULSE);
-    }
-
-    void send(int command, int channel, int note, int velocity) {
-        try {
-            synth.send(new ShortMessage(command, channel, note, velocity), -1);
-        } catch (Exception e) {
-            System.err.println("MIDI error: " + e.getMessage());
-        }
+        Push2.animatePad(push, x, y, Push2.BLACK, BandLoop.MEMBER_PAD[m], Push2.ANIM_PULSE);
     }
 
     void playNote(int channel, int note, int velocity, long millis) {
@@ -533,7 +400,7 @@ public class Notesweeper {
 
     void redraw() {
         if (display == null) return;
-        if (state == State.JAM) { display.draw(this::drawJam); return; }
+        if (state == State.JAM) { jam.redraw(); return; }
         display.draw(g -> {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, Push2.Display.WIDTH, Push2.Display.HEIGHT);
@@ -559,14 +426,14 @@ public class Notesweeper {
                 int px = BOARD_X + x * CELL, py = BOARD_Y + (Push2.GRID - 1 - y) * CELL;   // y = 0 is the bottom row
                 int m = board.memberAt(x, y);
                 if (board.isFlagged(x, y)) {
-                    fillCell(g, px, py, memberColor(m), BandLoop.MEMBERS.get(m).name().substring(0, 1), Color.BLACK);
+                    fillCell(g, px, py, BandLoop.memberColor(m), BandLoop.MEMBERS.get(m).name().substring(0, 1), Color.BLACK);
                 } else if (board.isExploded(x, y)) {
                     fillCell(g, px, py, NUMBER_COLORS[3], "X", Color.WHITE);
                 } else if (board.isRevealed(x, y)) {
                     int n = board.neighbours(x, y);
                     fillCell(g, px, py, new Color(20, 20, 20), n == 0 ? "" : String.valueOf(n), numberColor(n));
                 } else if (state == State.LOST && m != SweeperBoard.EMPTY) {
-                    fillCell(g, px, py, HIDDEN_LCD, BandLoop.MEMBERS.get(m).name().substring(0, 1), memberColor(m));
+                    fillCell(g, px, py, HIDDEN_LCD, BandLoop.MEMBERS.get(m).name().substring(0, 1), BandLoop.memberColor(m));
                 } else {
                     fillCell(g, px, py, HIDDEN_LCD, "", Color.WHITE);
                 }
@@ -598,7 +465,7 @@ public class Notesweeper {
             Member member = BandLoop.MEMBERS.get(m);
             int bx = INFO_X + m * 77, by = 96, bw = 70, bh = 50;
             if (joined[m]) {
-                g.setColor(memberColor(m));
+                g.setColor(BandLoop.memberColor(m));
                 g.fillRoundRect(bx, by, bw, bh, 10, 10);
                 g.setColor(Color.BLACK);
             } else {
@@ -614,60 +481,6 @@ public class Notesweeper {
                 g.drawLine(bx + 6, by + 6, bx + bw - 6, by + bh - 6);
                 g.drawLine(bx + bw - 6, by + 6, bx + 6, by + bh - 6);
             }
-        }
-    }
-
-    /** Jam screen; the bottom strip lines up with the 8 buttons below the display. */
-    void drawJam(Graphics2D g) {
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, Push2.Display.WIDTH, Push2.Display.HEIGHT);
-
-        g.setColor(Color.WHITE);
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
-        g.drawString("JAM SESSION", 16, 36);
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-        g.setColor(band.isRunning() ? NUMBER_COLORS[2] : Color.GRAY);
-        g.drawString((band.isRunning() ? "\u25B6 band " : "\u25A0 band ") + band.master() * 100 / BandLoop.FULL + " %", 260, 34);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
-        g.drawString(lastPlayed, Push2.Display.WIDTH - 16 - g.getFontMetrics().stringWidth(lastPlayed), 36);
-
-        g.setColor(Color.LIGHT_GRAY);
-        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
-        g.drawString(status, 16, 70);
-        g.setColor(Color.GRAY);
-        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        g.drawString("encoders: how loud you play \u00B7 master: band level \u00B7 buttons below: band part on/off \u00B7 PLAY: band \u00B7 NEW: next round",
-                16, 96);
-
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-        int slot = Push2.Display.WIDTH / Push2.GRID;                 // 120 px per button
-        for (int x = 0; x < Push2.GRID; x++) {
-            int bx = x * slot + 6, by = 110, bw = slot - 12, bh = 44;
-            int m = columnMember(x);
-            if (m < 0) {
-                g.setColor(new Color(40, 40, 40));
-                g.setStroke(new BasicStroke(1));
-                g.drawRoundRect(bx, by, bw, bh, 10, 10);
-                continue;
-            }
-            Member member = BandLoop.MEMBERS.get(m);
-            boolean muted = band.isMuted(m);
-            if (muted) {
-                g.setColor(memberColor(m));
-                g.setStroke(new BasicStroke(2));
-                g.drawRoundRect(bx, by, bw, bh, 10, 10);
-            } else {
-                g.setColor(memberColor(m));
-                g.fillRoundRect(bx, by, bw, bh, 10, 10);
-                g.setColor(Color.BLACK);
-            }
-            String label = member.name() + (muted ? " (off)" : "");
-            int w = g.getFontMetrics().stringWidth(label);
-            g.drawString(label, bx + (bw - w) / 2, by + 24);
-            // live level bar along the bottom of the slot, with a tick at the middle (1×)
-            g.fillRect(bx + 8, by + bh - 10, (bw - 16) * liveLevel[m] / 127, 4);
-            g.fillRect(bx + 8 + (bw - 16) / 2, by + bh - 13, 1, 10);
         }
     }
 

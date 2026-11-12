@@ -229,6 +229,21 @@ tasks.register('notesweeper', JavaExec) {
     if (project.hasProperty('spy'))    { args '--spy' }
 }
 
+tasks.register('push2Jam', JavaExec) {
+    group = 'push2'
+    description = 'Jam over the Notesweeper band on Push 2 (-Pband=Kick,Bass,..., -Pdevice=<synth> optional)'
+    classpath = sourceSets.push2.runtimeClasspath
+    jvmArgs '--enable-native-access=ALL-UNNAMED',                    // JNI (usb4java) and FFM (libusb)
+            '--add-exports', 'java.desktop/com.sun.media.sound=ALL-UNNAMED' // low-latency Gervill
+    mainClass = "${pkg}.push2.Push2Jam"
+    if (project.hasProperty('device')) { args '--device=' + project.property('device') }
+    if (project.hasProperty('band'))   { args '--band='   + project.property('band')   }
+    if (project.hasProperty('push'))   { args '--push='   + project.property('push')   }
+    if (project.hasProperty('display')) { args '--display=' + project.property('display') }
+    if (project.hasProperty('latency')) { args '--latency=' + project.property('latency') }
+    if (project.hasProperty('spy'))    { args '--spy' }
+}
+
 // ── Slide build ──────────────────────────────────────────────────────────────
 // Requires Node.js / npx.  Run once after editing slides/slides.md or slides-de.md.
 //   ./gradlew buildSlides

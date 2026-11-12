@@ -40,6 +40,8 @@ src/push2/java/net/jetztgrad/midi/workshop/push2/   — own source set + deps (W
         LibUsbDisplay.java   — display backend "ffm": libusb via Java FFM, encodes frames itself
         Push2Hello.java      — hello world: pads → synth notes, LCD mirrors the grid
         Notesweeper.java     — the game: Minesweeper where you find a band (main, input, LEDs, LCD)
+        JamSession.java      — jam mode: pads as keyboard over the groove (shared by both apps)
+        Push2Jam.java        — standalone jam app: JamSession with a chosen lineup, no game
         SweeperBoard.java    — pure game rules (no MIDI): placement, flood fill, flags, win
         BandLoop.java        — 4-bar Am–F–C–G groove, one muted Sequencer track per band member
 
@@ -151,8 +153,10 @@ npx @marp-team/marp-cli@latest slides/slides-de.md --html -o slides/slides-de.ht
 ```bash
 ./push2Hello.sh  [--device=<synth>] [--patch=<0-127|name>] [--push=<port>] [--display=ffm|wayang] [--latency=<ms>]
 ./notesweeper.sh [--device=<synth>] [--boom=<file.mid>] [--push=<port>] [--display=ffm|wayang] [--latency=<ms>]
+./push2Jam.sh    [--band=Kick,Bass,…] [--device=<synth>] [--push=<port>] [--display=ffm|wayang] [--latency=<ms>]
 ./gradlew push2Hello  [-Pdevice=<synth>] [-Ppatch=...] [-Ppush=<port>] [-Pdisplay=ffm|wayang] [-Platency=<ms>]
 ./gradlew notesweeper [-Pdevice=<synth>] [-Pboom=<file.mid>] [-Ppush=<port>] [-Pdisplay=ffm|wayang] [-Platency=<ms>]
+./gradlew push2Jam    [-Pband=Kick,Bass,…] [-Pdevice=<synth>] [-Ppush=<port>] [-Pdisplay=ffm|wayang] [-Platency=<ms>]
 ```
 
 **Notesweeper rules**: 10 band members hide on the 8×8 pads (placed after the first reveal,
@@ -162,13 +166,15 @@ correct → member's track un-mutes in `BandLoop`, pad pulses in its colour; wro
 −1 life. Revealing a member = boom (crash + taiko + instrument burst + optional `--boom`
 MIDI file), member lost, −1 life. 3 lives; New button restarts. All game logic runs on one
 `ScheduledExecutorService` thread (input + timers), so no locks.
-**Jam mode** (`State.JAM`, ~2.5 s after a win): pads become a keyboard over the running groove.
-Column x = `columnMember(x)` = `lineup.get(x)` — members in join order (auto-joined at win come
-last), exploded members excluded, max 8 — aligned with the display slot, the encoder above and
-the button below. Rows bottom → top = `Member.keys()`: A natural minor for melodic members,
+**Jam mode** = `JamSession`, used twice: as Notesweeper's bonus (`State.JAM`, ~2.5 s after a
+win; lineup = members in join order, auto-joined at win last, exploded excluded; NEW → next
+round) and standalone by `Push2Jam` (lineup from `--band=`, default Kick Snare Hi-hat Bass Keys
+Pad Arp Lead; all lineup parts start playing). The owner keeps the single game thread and
+forwards MIDI to `JamSession.onMidi`. Column x = `columnMember(x)` = `lineup.get(x)`, max 8 —
+aligned with the display slot, the encoder above and the button below. Rows bottom → top = `Member.keys()`: A natural minor for melodic members,
 8 GM drum/percussion notes for drum members. Encoders CC 71–78 set each member's *live* level
 (`liveLevel[m]`, starts at `LIVE_UNITY` = 64 = middle); live velocity =
-`min(127, pad × level / 64 + JAM_BOOST)` (boost 25; level 0 = silent) — see `liveVelocity`.
+`min(127, pad × level / 64 + BOOST)` (boost 25; level 0 = silent) — see `liveVelocity`.
 The LCD shows `vel <pad> → <sent>`. Master encoder CC 79 = background groove level for the
 whole band (60 % on entering jam). Buttons below the display (CC 20–27) switch that member's
 groove part on/off (`BandLoop.setMuted`, sends all-notes-off on that channel). Play (CC 85)
@@ -183,7 +189,7 @@ delivers SysEx nor receives it (Push replies arrive in 3-byte USB-MIDI chunks it
 reassembles); a native CoreMIDI probe works both ways. So `Push2.DEFAULT_PALETTE` holds the
 128 default entries (dumped once via CoreMIDI, SysEx 0x04). `Notesweeper` maps each intended
 colour to the nearest entry (`Push2.nearestPaletteIndex`, members kept unique) into
-`MEMBER_PAD` / `NUMBER_PAD` / `HIDDEN_PAD` / `HELD_PAD`, and the LCD draws
+`BandLoop.MEMBER_PAD` / `NUMBER_PAD` / `HIDDEN_PAD` / `HELD_PAD`, and the LCD draws
 `Push2.paletteColor(index)` — so pads, buttons and screen match. The palette has no true
 orange or cyan, so Kick / Keys / number 5 use colours that exist on Push (indices 3, 15, 3).
 If Live has loaded its own palette since Push powered up, colours may differ until a power cycle.
