@@ -163,6 +163,8 @@ public final class Push2 {
     public static final int CC_SHIFT  = 49;
     public static final int CC_PLAY   = 85;
     public static final int CC_NEW    = 87;
+    /** The 8 RGB buttons below the display: CC 20 (left) … 27 (right). */
+    public static final int CC_LOWER_FIRST = 20;
 
     public static void setButton(Receiver push, int cc, int value) {
         setButton(push, cc, value, ANIM_NONE);

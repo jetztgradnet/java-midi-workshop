@@ -4,6 +4,7 @@ import net.jetztgrad.midi.workshop.DeviceUtil;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
@@ -24,25 +25,46 @@ import java.util.List;
  *
  * MIDI channels (1-based, for routing to an external synth):
  *   1 Bass · 2 Keys · 3 Pad · 4 Arp · 5 Lead · 6 Brass · 10 Drums
+ *   11–16: the same instruments played live in jam mode (drums stay on 10),
+ *          so the loop's note-offs never cut off what you play.
  */
 final class BandLoop {
 
-    /** A band member: name, MIDI channel (0-based), GM program (-1 = drums), signature note, colour. */
-    record Member(String name, int channel, int program, int note, Color color) {}
+    /**
+     * A band member: name, MIDI channel (0-based), GM program (-1 = drums),
+     * signature note, colour, and the 8 notes it plays in jam mode.
+     */
+    record Member(String name, int channel, int program, int note, Color color, int[] keys) {
+        /** Channel for live (jam) playing: drums share 10, others use 11–16. */
+        int liveChannel() { return channel == DRUMS ? DRUMS : channel + LIVE_OFFSET; }
+    }
 
     static final int DRUMS = 9;
+    static final int LIVE_OFFSET = 10;
+
+    /** A natural minor (A B C D E F G A) from {@code root}: fits Am – F – C – G. */
+    static int[] aMinor(int root) {
+        int[] steps = { 0, 2, 3, 5, 7, 8, 10, 12 };
+        int[] keys = new int[steps.length];
+        for (int i = 0; i < steps.length; i++) keys[i] = root + steps[i];
+        return keys;
+    }
 
     static final List<Member> MEMBERS = List.of(
-            new Member("Kick",   DRUMS, -1, 36, new Color(201,  60,   0)),
-            new Member("Snare",  DRUMS, -1, 38, new Color(255, 220,   0)),
-            new Member("Hi-hat", DRUMS, -1, 42, new Color(160, 255,  40)),
-            new Member("Clap",   DRUMS, -1, 39, new Color(255,  60, 200)),
-            new Member("Bass",   0,     38, 33, new Color( 30,  90, 255)),   // Synth Bass 1
-            new Member("Keys",   1,      4, 60, new Color( 38, 158, 114)),   // Electric Piano 1
-            new Member("Pad",    2,     89, 69, new Color(150,  90, 255)),   // Pad 2 (warm)
-            new Member("Arp",    3,     46, 76, new Color( 40, 200,  80)),   // Orchestral Harp
-            new Member("Lead",   4,     80, 76, new Color(255,  40,  50)),   // Lead 1 (square)
-            new Member("Brass",  5,     61, 64, new Color(255, 170, 120)));  // Brass Section
+            // kicks, then toms low → high
+            new Member("Kick",   DRUMS, -1, 36, new Color(201,  60,   0), new int[] { 35, 36, 41, 43, 45, 47, 48, 50 }),
+            // snares, side stick, claves, wood blocks, cabasa, maracas
+            new Member("Snare",  DRUMS, -1, 38, new Color(255, 220,   0), new int[] { 38, 40, 37, 75, 76, 77, 69, 70 }),
+            // hats, rides, crash, splash
+            new Member("Hi-hat", DRUMS, -1, 42, new Color(160, 255,  40), new int[] { 42, 44, 46, 51, 53, 59, 49, 55 }),
+            // clap, tambourine, cowbell, bongos, congas
+            new Member("Clap",   DRUMS, -1, 39, new Color(255,  60, 200), new int[] { 39, 54, 56, 60, 61, 62, 63, 64 }),
+            new Member("Bass",   0,     38, 33, new Color( 30,  90, 255), aMinor(33)),   // Synth Bass 1, A1
+            new Member("Keys",   1,      4, 60, new Color( 38, 158, 114), aMinor(57)),   // Electric Piano 1, A3
+            new Member("Pad",    2,     89, 69, new Color(150,  90, 255), aMinor(57)),   // Pad 2 (warm), A3
+            new Member("Arp",    3,     46, 76, new Color( 40, 200,  80), aMinor(69)),   // Orchestral Harp, A4
+            new Member("Lead",   4,     80, 76, new Color(255,  40,  50), aMinor(69)),   // Lead 1 (square), A4
+            new Member("Brass",  5,     61, 64, new Color(255, 170, 120), aMinor(57)));  // Brass Section, A3
 
     static final int BPM         = 108;
     static final int TICKS_16TH  = 6;               // resolution 24 PPQ → 6 ticks per 16th
@@ -56,9 +78,16 @@ final class BandLoop {
 
     private final Sequencer sequencer;
 
+    // Mixer: all groove velocities are scaled by master / 127.
+    static final int FULL = 127;
+    private volatile int master = FULL;
+
     BandLoop(Receiver out) throws MidiUnavailableException, InvalidMidiDataException {
-        for (Member m : MEMBERS)
-            if (m.program() >= 0) DeviceUtil.sendProgramChange(out, m.channel(), m.program());
+        for (Member m : MEMBERS) {
+            if (m.program() < 0) continue;
+            DeviceUtil.sendProgramChange(out, m.channel(), m.program());
+            DeviceUtil.sendProgramChange(out, m.liveChannel(), m.program());
+        }
 
         Sequence sequence = new Sequence(Sequence.PPQ, 4 * TICKS_16TH);
         for (int i = 0; i < MEMBERS.size(); i++) {
@@ -70,15 +99,16 @@ final class BandLoop {
 
         sequencer = MidiSystem.getSequencer(false);   // false = not wired to the default synth
         sequencer.open();
-        sequencer.getTransmitter().setReceiver(out);
+        sequencer.getTransmitter().setReceiver(new Mixer(out));
         sequencer.setSequence(sequence);
         sequencer.setLoopStartPoint(0);
         sequencer.setLoopEndPoint(LOOP_TICKS);
         sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
     }
 
-    /** Starts the loop from bar 1 with every member muted. */
+    /** Starts the loop from bar 1 with every member muted, at full level. */
     void start() {
+        master = FULL;
         sequencer.stop();
         for (int i = 0; i < MEMBERS.size(); i++) sequencer.setTrackMute(i, true);
         sequencer.setTickPosition(0);
@@ -89,6 +119,58 @@ final class BandLoop {
     void join(int member) { sequencer.setTrackMute(member, false); }
     void stop()           { sequencer.stop(); }
     void close()          { sequencer.close(); }
+
+    // ── Jam mode controls ────────────────────────────────────────────────────
+
+    boolean isRunning()   { return sequencer.isRunning(); }
+
+    /** Stops or continues the loop where it is. */
+    void toggle() {
+        if (sequencer.isRunning()) {
+            sequencer.stop();
+        } else {
+            sequencer.start();
+            sequencer.setTempoInBPM(BPM);
+        }
+    }
+
+    boolean isMuted(int member) { return sequencer.getTrackMute(member); }
+
+    /** Mutes or un-mutes one member's track, silencing any note it was holding. */
+    void setMuted(int member, boolean muted, Receiver out) {
+        sequencer.setTrackMute(member, muted);
+        int ch = MEMBERS.get(member).channel();
+        if (muted && ch != DRUMS) {
+            try {
+                out.send(new ShortMessage(ShortMessage.CONTROL_CHANGE, ch, 123, 0), -1);  // all notes off
+            } catch (InvalidMidiDataException ignored) {}
+        }
+    }
+
+    int master()               { return master; }
+    void setMaster(int value)  { master = Math.max(0, Math.min(FULL, value)); }
+
+    /** Scales the groove's NOTE_ON velocities by the master level; everything else passes unchanged. */
+    private final class Mixer implements Receiver {
+        private final Receiver out;
+        Mixer(Receiver out) { this.out = out; }
+
+        @Override
+        public void send(MidiMessage message, long timeStamp) {
+            if (message instanceof ShortMessage sm && sm.getCommand() == ShortMessage.NOTE_ON && sm.getData2() > 0) {
+                int velocity = sm.getData2() * master / FULL;
+                if (velocity == 0) return;                   // fully faded out: drop the note
+                try {
+                    message = new ShortMessage(ShortMessage.NOTE_ON, sm.getChannel(), sm.getData1(), velocity);
+                } catch (InvalidMidiDataException e) {
+                    return;
+                }
+            }
+            out.send(message, timeStamp);
+        }
+
+        @Override public void close() {}
+    }
 
     // ── The song ─────────────────────────────────────────────────────────────
 

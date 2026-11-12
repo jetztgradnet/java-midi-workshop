@@ -162,7 +162,22 @@ correct → member's track un-mutes in `BandLoop`, pad pulses in its colour; wro
 −1 life. Revealing a member = boom (crash + taiko + instrument burst + optional `--boom`
 MIDI file), member lost, −1 life. 3 lives; New button restarts. All game logic runs on one
 `ScheduledExecutorService` thread (input + timers), so no locks.
-Channels: 1 Bass, 2 Keys, 3 Pad, 4 Arp, 5 Lead, 6 Brass, 7 count notes, 8 boom, 9 honk, 10 drums.
+**Jam mode** (`State.JAM`, ~2.5 s after a win): pads become a keyboard over the running groove.
+Column x = `columnMember(x)` = `lineup.get(x)` — members in join order (auto-joined at win come
+last), exploded members excluded, max 8 — aligned with the display slot, the encoder above and
+the button below. Rows bottom → top = `Member.keys()`: A natural minor for melodic members,
+8 GM drum/percussion notes for drum members. Encoders CC 71–78 set each member's *live* level
+(`liveLevel[m]`, starts at `LIVE_UNITY` = 64 = middle); live velocity =
+`min(127, pad × level / 64 + JAM_BOOST)` (boost 25; level 0 = silent) — see `liveVelocity`.
+The LCD shows `vel <pad> → <sent>`. Master encoder CC 79 = background groove level for the
+whole band (60 % on entering jam). Buttons below the display (CC 20–27) switch that member's
+groove part on/off (`BandLoop.setMuted`, sends all-notes-off on that channel). Play (CC 85)
+toggles the groove. Live notes go to `Member.liveChannel()` (11–16, drums 10), bypassing the
+mixer, so the loop never cuts them off. NEW leaves jam mode.
+**Mixer**: the sequencer's transmitter feeds `BandLoop.Mixer`, which scales the groove's
+NOTE_ON velocities by `master / 127` and drops notes that scale to 0. `start()` resets it.
+Channels: 1 Bass, 2 Keys, 3 Pad, 4 Arp, 5 Lead, 6 Brass, 7 count notes, 8 boom, 9 honk, 10 drums,
+11–16 live (jam) Bass…Brass.
 **Pad colours use Push's default palette — no SysEx.** Java's built-in macOS MIDI neither
 delivers SysEx nor receives it (Push replies arrive in 3-byte USB-MIDI chunks it never
 reassembles); a native CoreMIDI probe works both ways. So `Push2.DEFAULT_PALETTE` holds the
